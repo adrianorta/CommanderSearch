@@ -135,6 +135,13 @@
       transition: transform 0.18s ease;
     }
     .mode-toggle.is-any::before { transform: translateX(100%); }
+    .mode-toggle.thirds {
+      width: 186px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .mode-toggle.thirds::before { width: calc(33.333% - 2px); }
+    .mode-toggle.thirds[data-mode="exact"]::before { transform: translateX(100%); }
+    .mode-toggle.thirds[data-mode="color"]::before { transform: translateX(200%); }
     .mode-toggle span {
       position: relative;
       z-index: 1;
@@ -144,7 +151,8 @@
     .mode-toggle[data-mode="and"] span:first-child,
     .mode-toggle[data-mode="or"] span:last-child,
     .mode-toggle[data-mode="within"] span:first-child,
-    .mode-toggle[data-mode="exact"] span:last-child {
+    .mode-toggle[data-mode="exact"] span:nth-child(2),
+    .mode-toggle[data-mode="color"] span:last-child {
       color: #dce9ff;
     }
 
@@ -303,30 +311,25 @@
 
     .kw-list { display: grid; gap: 10px; }
     .kw-pads {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
     .kw-pad {
-      aspect-ratio: 1;
-      width: 100%;
-      max-height: 92px;
+      min-height: 36px;
+      padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid var(--line);
       background: var(--raised);
       color: var(--text);
-      padding: 6px 4px;
-      display: flex;
-      flex-direction: column;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 2px;
-      font-size: 0.68rem;
-      font-weight: 650;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 400;
       line-height: 1.15;
       text-align: center;
-      text-transform: lowercase;
-      letter-spacing: -0.01em;
+      text-transform: none;
       touch-action: manipulation;
     }
     .kw-pad.on {
@@ -442,8 +445,11 @@
       background: var(--panel);
       border-radius: 18px 18px 0 0;
       border-top: 1px solid var(--line);
-      padding: 8px 16px 28px;
+      padding: 0 16px 28px;
+      touch-action: pan-y;
+      transition: transform 0.2s ease;
     }
+    .kw-sheet-card.dragging { transition: none; }
     .kw-sheet-bar {
       position: sticky;
       top: 0;
@@ -475,11 +481,21 @@
       place-items: center;
     }
     .kw-sheet-handle {
+      width: 100%;
+      height: 22px;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+    .kw-sheet-handle::after {
+      content: "";
       width: 40px;
       height: 4px;
       border-radius: 999px;
       background: var(--line);
-      margin: 6px auto 0;
     }
 
     @media (max-width: 900px) {
@@ -542,14 +558,6 @@
         align-self: end;
         font-size: 0.72rem;
       }
-      .kw-pads {
-        grid-template-columns: repeat(7, minmax(58px, 72px));
-        gap: 8px;
-      }
-      .kw-pad {
-        max-height: 72px;
-        font-size: 0.66rem;
-      }
       .kw-panel { margin-top: 8px; }
       .kw-sheet { display: none !important; }
       .stage {
@@ -586,9 +594,6 @@
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 18px;
       }
-      .kw-pads {
-        grid-template-columns: repeat(7, minmax(64px, 80px));
-      }
     }
 
     @media (hover: hover) and (min-width: 901px) {
@@ -622,9 +627,10 @@
       <section class="sec sec-id">
         <div class="field-row">
           <label class="field">Identity</label>
-          <button type="button" class="mode-toggle" id="idMode" data-mode="within" aria-label="Identity within or exact colors">
-            <span>Within</span>
-            <span>Exact</span>
+          <button type="button" class="mode-toggle thirds" id="idMode" data-mode="exact" aria-label="Color filter mode">
+            <span data-pick="within">Having</span>
+            <span data-pick="exact">Identity</span>
+            <span data-pick="color">Exact</span>
           </button>
         </div>
         <div class="row" id="colors">
@@ -685,8 +691,8 @@
         <div class="field-row">
           <label class="field">Keywords &amp; roles</label>
           <button type="button" class="mode-toggle" id="kwMode" data-mode="and" aria-label="Match all or any selected roles">
-            <span>All</span>
-            <span>Any</span>
+            <span data-kw-mode="and">All</span>
+            <span data-kw-mode="or">Any</span>
           </button>
         </div>
         <div class="kw-list" id="keywords"></div>
@@ -971,7 +977,7 @@
       keywords: new Set(),
       kwOpen: null,
       kwMode: "and",
-      idMode: "within",
+      idMode: "exact",
       cmcMin: 0,
       cmcMax: 15,
       next: null,
@@ -993,9 +999,13 @@
       const colors = selectedColors();
       const colorless = state.colors.has("C");
       if (!colors.length && !colorless) return "";
-      if (!colors.length && colorless) return "id:c";
+      if (!colors.length && colorless) {
+        return state.idMode === "exact" ? "id:c" : "c:c";
+      }
       const code = colors.join("");
-      return state.idMode === "exact" ? "id:" + code : "id<=" + code;
+      if (state.idMode === "color") return "c:" + code;
+      if (state.idMode === "exact") return "id:" + code;
+      return "c>=" + code;
     }
 
     function tagClause(map) {
@@ -1285,11 +1295,15 @@
       const btn = $("idMode");
       if (!btn) return;
       btn.dataset.mode = state.idMode;
-      btn.classList.toggle("is-any", state.idMode === "exact");
     }
     function closeKeywordSheet() {
+      const sheet = $("kwSheet");
+      const card = sheet?.querySelector(".kw-sheet-card");
+      if (card) {
+        card.classList.remove("dragging");
+        card.style.transform = "";
+      }
       if (!state.kwOpen) {
-        const sheet = $("kwSheet");
         if (sheet) {
           sheet.classList.remove("open");
           sheet.hidden = true;
@@ -1305,13 +1319,54 @@
       if (e.key === "Escape") closeKeywordSheet();
     });
 
-    $("idMode").addEventListener("click", () => {
-      state.idMode = state.idMode === "within" ? "exact" : "within";
+    (function bindSheetSwipe() {
+      const sheet = $("kwSheet");
+      const card = sheet.querySelector(".kw-sheet-card");
+      const grab = (t) => t.closest(".kw-sheet-handle, .kw-sheet-bar");
+      const drag = { on: false, y: 0, last: 0, v: 0 };
+      const resetCard = () => {
+        card.classList.remove("dragging");
+        card.style.transform = "";
+      };
+      card.addEventListener("pointerdown", (e) => {
+        if (!grab(e.target)) return;
+        drag.on = true;
+        drag.y = e.clientY;
+        drag.last = e.clientY;
+        drag.v = 0;
+        card.classList.add("dragging");
+        card.setPointerCapture(e.pointerId);
+      });
+      card.addEventListener("pointermove", (e) => {
+        if (!drag.on) return;
+        const dy = e.clientY - drag.y;
+        drag.v = e.clientY - drag.last;
+        drag.last = e.clientY;
+        card.style.transform = "translateY(" + Math.max(0, dy) + "px)";
+      });
+      const end = (e) => {
+        if (!drag.on) return;
+        drag.on = false;
+        const dy = Math.max(0, e.clientY - drag.y);
+        const shouldClose = dy > 90 || drag.v > 12;
+        resetCard();
+        if (shouldClose) closeKeywordSheet();
+      };
+      card.addEventListener("pointerup", end);
+      card.addEventListener("pointercancel", end);
+    })();
+
+    $("idMode").addEventListener("click", (e) => {
+      const bit = e.target.closest("[data-pick]");
+      if (!bit) return;
+      state.idMode = bit.dataset.pick;
       paintIdMode();
       updatePreview();
     });
-    $("kwMode").addEventListener("click", () => {
-      state.kwMode = state.kwMode === "and" ? "or" : "and";
+    $("kwMode").addEventListener("click", (e) => {
+      const bit = e.target.closest("[data-kw-mode]");
+      if (!bit) return;
+      state.kwMode = bit.dataset.kwMode;
       paintKwMode();
       updatePreview();
     });
@@ -1419,7 +1474,7 @@
       state.keywords.clear();
       state.kwOpen = null;
       state.kwMode = "and";
-      state.idMode = "within";
+      state.idMode = "exact";
       paintKwMode();
       paintIdMode();
       renderKeywords();
