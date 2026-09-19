@@ -202,6 +202,35 @@
       font-size: 0.68rem;
       font-variant-numeric: tabular-nums;
     }
+    .cmc-desk { display: none; }
+    .cmc-scale {
+      display: flex;
+      gap: 3px;
+    }
+    .cmc-tick {
+      flex: 1;
+      min-width: 0;
+      height: 34px;
+      padding: 0;
+      border-radius: 6px;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+    .cmc-tick.span {
+      background: #1c2a3d;
+      border-color: #3a5478;
+      color: #c5d8f5;
+    }
+    .cmc-tick.on {
+      background: #2d5aa0;
+      border-color: #6ea8ff;
+      color: #fff;
+    }
+    .cmc-desk-hint {
+      color: var(--muted);
+      font-size: 0.68rem;
+    }
 
     button, .chip {
       border: 1px solid var(--line);
@@ -389,6 +418,68 @@
     }
     .more-wrap { display: flex; justify-content: center; margin-top: 20px; }
 
+    .kw-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+    }
+    .kw-sheet.open { display: block; }
+    .kw-sheet-back {
+      position: absolute;
+      inset: 0;
+      background: #00000088;
+    }
+    .kw-sheet-card {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 76vh;
+      overflow: auto;
+      background: var(--panel);
+      border-radius: 18px 18px 0 0;
+      border-top: 1px solid var(--line);
+      padding: 8px 16px 28px;
+    }
+    .kw-sheet-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0 12px;
+      background: var(--panel);
+    }
+    .kw-sheet-bar h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .kw-sheet-close {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 50%;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.35rem;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+    }
+    .kw-sheet-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--line);
+      margin: 6px auto 0;
+    }
+
     @media (max-width: 900px) {
       .app { grid-template-columns: 1fr; }
       .rail {
@@ -397,6 +488,124 @@
         border-right: 0;
         border-bottom: 1px solid var(--line);
       }
+      .kw-panel { display: none !important; }
+    }
+
+    @media (min-width: 901px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+      .rail {
+        position: relative;
+        height: auto;
+        overflow: visible;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: minmax(200px, 0.9fr) minmax(260px, 1.2fr) minmax(240px, 1fr) 168px;
+        grid-template-areas:
+          "brand brand brand actions"
+          "id type cmc actions"
+          "sub kw kw query";
+        gap: 18px 24px;
+        padding: 20px 28px 18px;
+        align-items: start;
+      }
+      .brand { grid-area: brand; margin: 0; }
+      h1 { font-size: 1.22rem; }
+      .sec { border-top: 0; padding: 0; }
+      .sec-id { grid-area: id; }
+      .sec-type { grid-area: type; }
+      .sec-cmc { grid-area: cmc; }
+      .cmc-slider { display: none; }
+      .cmc-desk { display: grid; gap: 8px; }
+      .sec-sub { grid-area: sub; }
+      .sec-kw { grid-area: kw; }
+      .actions {
+        grid-area: actions;
+        position: static;
+        margin: 0;
+        padding: 0;
+        background: none;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .query {
+        grid-area: query;
+        margin: 0;
+        align-self: end;
+        font-size: 0.72rem;
+      }
+      .kw-pads {
+        grid-template-columns: repeat(7, minmax(58px, 72px));
+        gap: 8px;
+      }
+      .kw-pad {
+        max-height: 72px;
+        font-size: 0.66rem;
+      }
+      .kw-panel { margin-top: 8px; }
+      .kw-sheet { display: none !important; }
+      .stage {
+        padding: 24px 28px 64px;
+        background:
+          radial-gradient(ellipse at top, #161b24 0%, var(--bg) 55%);
+      }
+      .topbar { margin-bottom: 20px; }
+      .status { font-size: 0.95rem; }
+      .results {
+        grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+        gap: 16px;
+      }
+      .card { border-radius: 12px; }
+      .meta { padding: 10px 11px 12px; }
+      .name { font-size: 0.88rem; }
+      .type { font-size: 0.74rem; }
+      .empty { padding: 18vh 12px; font-size: 1rem; }
+      .more-wrap button {
+        min-width: 180px;
+        border-radius: 10px;
+        padding: 10px 18px;
+      }
+    }
+
+    @media (min-width: 1400px) {
+      .rail {
+        grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.1fr) minmax(280px, 1fr) 180px;
+        padding: 24px 40px 20px;
+        gap: 20px 32px;
+      }
+      .stage { padding: 28px 40px 80px; }
+      .results {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+      }
+      .kw-pads {
+        grid-template-columns: repeat(7, minmax(64px, 80px));
+      }
+    }
+
+    @media (hover: hover) and (min-width: 901px) {
+      .chip:hover,
+      .kw-pad:hover,
+      .mana:hover {
+        border-color: #4d73a8;
+      }
+      .kw-pad:hover { background: #243044; }
+      .card {
+        transition: transform 0.16s ease, border-color 0.16s ease;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        border-color: #4d73a8;
+      }
+      button.primary:hover { background: #3669b4; }
+      button.ghost:hover { background: var(--raised); }
+      .mode-toggle:hover { border-color: #4d73a8; }
     }
   </style>
 </head>
@@ -408,7 +617,7 @@
         <span>Scryfall</span>
       </div>
 
-      <section class="sec">
+      <section class="sec sec-id">
         <label class="field">Identity</label>
         <div class="row" id="colors">
           <button class="mana" data-c="W" title="White" aria-pressed="false"><img alt="W" src="https://svgs.scryfall.io/card-symbols/W.svg" /></button>
@@ -420,7 +629,7 @@
         </div>
       </section>
 
-      <section class="sec">
+      <section class="sec sec-type">
         <label class="field">Type</label>
         <div class="types" id="types">
           <button class="chip" data-t="creature">Creature</button>
@@ -435,7 +644,7 @@
         </div>
       </section>
 
-      <section class="sec">
+      <section class="sec sec-cmc">
         <div class="field-row">
           <label class="field">Mana value</label>
           <button type="button" class="chip" id="cmcAny">Any</button>
@@ -453,14 +662,18 @@
             <span>0</span><span>5</span><span>10</span><span>15</span>
           </div>
         </div>
+        <div class="cmc-desk" id="cmcDesk">
+          <div class="cmc-scale" id="cmcScale"></div>
+          <div class="cmc-desk-hint">Click one value, click another for a range.</div>
+        </div>
       </section>
 
-      <section class="sec">
+      <section class="sec sec-sub">
         <label class="field" for="subtypeQuery">Subtype</label>
         <input id="subtypeQuery" type="text" placeholder="elf, -human, aura" autocomplete="off" spellcheck="false" />
       </section>
 
-      <section class="sec">
+      <section class="sec sec-kw">
         <div class="field-row">
           <label class="field">Keywords &amp; roles</label>
           <button type="button" class="mode-toggle" id="kwMode" data-mode="and" aria-label="Match all or any selected roles">
@@ -496,11 +709,25 @@
           </select>
         </div>
       </div>
-      <div class="results" id="results"></div>
+      <div class="results" id="results">
+        <div class="empty">Set filters above, then search.</div>
+      </div>
       <div class="more-wrap">
         <button id="moreBtn" hidden>Load more</button>
       </div>
     </main>
+  </div>
+
+  <div class="kw-sheet" id="kwSheet" hidden>
+    <div class="kw-sheet-back" id="kwSheetBack"></div>
+    <div class="kw-sheet-card" role="dialog" aria-modal="true" aria-labelledby="kwSheetTitle">
+      <div class="kw-sheet-handle"></div>
+      <div class="kw-sheet-bar">
+        <h2 id="kwSheetTitle">Roles</h2>
+        <button type="button" class="kw-sheet-close" id="kwSheetClose" aria-label="Close">×</button>
+      </div>
+      <div class="keywords" id="kwSheetBody"></div>
+    </div>
   </div>
 
   <script>
@@ -833,21 +1060,67 @@
 
     function renderCmc() {
       const any = cmcIsAny();
-      $("cmcValue").textContent = any ? "Any" : state.cmcMin === state.cmcMax
+      const label = any ? "Any" : state.cmcMin === state.cmcMax
         ? String(state.cmcMin)
         : state.cmcMin + "–" + state.cmcMax;
+      const valueEl = $("cmcValue");
+      if (valueEl) valueEl.textContent = label;
       $("cmcAny").classList.toggle("on", any);
       const win = $("cmcWindow");
       const pad = $("cmcPad");
-      if (!win || !pad) return;
-      const rail = pad.querySelector(".cmc-rail");
-      const span = CMC_MAX || 1;
-      const railW = rail.clientWidth || Math.max(1, pad.clientWidth - 28);
-      const leftPad = rail.offsetLeft || 14;
-      const x0 = leftPad + (state.cmcMin / span) * railW;
-      const x1 = leftPad + (state.cmcMax / span) * railW;
-      win.style.left = Math.max(8, x0 - 10) + "px";
-      win.style.width = Math.max(28, x1 - x0 + 20) + "px";
+      if (win && pad) {
+        const rail = pad.querySelector(".cmc-rail");
+        const span = CMC_MAX || 1;
+        const railW = rail.clientWidth || Math.max(1, pad.clientWidth - 28);
+        const leftPad = rail.offsetLeft || 14;
+        const x0 = leftPad + (state.cmcMin / span) * railW;
+        const x1 = leftPad + (state.cmcMax / span) * railW;
+        win.style.left = Math.max(8, x0 - 10) + "px";
+        win.style.width = Math.max(28, x1 - x0 + 20) + "px";
+      }
+      const scale = $("cmcScale");
+      if (scale) {
+        if (!scale.dataset.ready) {
+          scale.innerHTML = "";
+          for (let n = 0; n <= CMC_MAX; n++) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "cmc-tick";
+            btn.dataset.n = String(n);
+            btn.textContent = String(n);
+            btn.addEventListener("click", () => pickCmcTick(n));
+            btn.addEventListener("pointerenter", (e) => {
+              if (e.buttons && cmcTickDrag.from != null) {
+                applyCmcWindow(cmcTickDrag.from, n);
+              }
+            });
+            btn.addEventListener("pointerdown", () => { cmcTickDrag.from = n; });
+            scale.appendChild(btn);
+          }
+          scale.dataset.ready = "1";
+        }
+        scale.querySelectorAll(".cmc-tick").forEach((btn) => {
+          const n = Number(btn.dataset.n);
+          btn.classList.toggle("on", !any && (n === state.cmcMin || n === state.cmcMax));
+          btn.classList.toggle("span", !any && n > state.cmcMin && n < state.cmcMax);
+        });
+      }
+    }
+
+    const cmcTickDrag = { from: null };
+    window.addEventListener("pointerup", () => { cmcTickDrag.from = null; });
+
+    function pickCmcTick(n) {
+      if (cmcIsAny()) {
+        applyCmcWindow(n, n);
+        return;
+      }
+      if (state.cmcMin === state.cmcMax) {
+        if (n === state.cmcMin) applyCmcWindow(0, CMC_MAX);
+        else applyCmcWindow(Math.min(n, state.cmcMin), Math.max(n, state.cmcMax));
+        return;
+      }
+      applyCmcWindow(n, n);
     }
 
     function updatePreview() {
@@ -919,17 +1192,8 @@
         });
       }
 
-      function showGroup(label) {
-        const group = KEYWORD_GROUPS.find((g) => g.label === label);
-        if (!group || state.kwOpen !== label) {
-          panel.hidden = true;
-          row.innerHTML = "";
-          paintPads();
-          return;
-        }
-        panel.hidden = false;
-        panelTitle.textContent = group.label;
-        row.innerHTML = "";
+      function fillChipRow(target, group) {
+        target.innerHTML = "";
         group.items.forEach(([name, query]) => {
           const btn = document.createElement("button");
           btn.className = "chip" + (state.keywords.has(query) ? " on" : "");
@@ -942,8 +1206,39 @@
             paintPads();
             updatePreview();
           });
-          row.appendChild(btn);
+          target.appendChild(btn);
         });
+      }
+
+      function showGroup(label) {
+        const group = KEYWORD_GROUPS.find((g) => g.label === label);
+        const mobile = window.matchMedia("(max-width: 900px)").matches;
+        const sheet = $("kwSheet");
+        if (!group || state.kwOpen !== label) {
+          panel.hidden = true;
+          row.innerHTML = "";
+          if (sheet) {
+            sheet.classList.remove("open");
+            sheet.hidden = true;
+          }
+          paintPads();
+          return;
+        }
+        if (mobile && sheet) {
+          panel.hidden = true;
+          $("kwSheetTitle").textContent = group.label;
+          fillChipRow($("kwSheetBody"), group);
+          sheet.hidden = false;
+          sheet.classList.add("open");
+        } else {
+          if (sheet) {
+            sheet.classList.remove("open");
+            sheet.hidden = true;
+          }
+          panel.hidden = false;
+          panelTitle.textContent = group.label;
+          fillChipRow(row, group);
+        }
         paintPads();
       }
 
@@ -976,6 +1271,24 @@
       btn.dataset.mode = state.kwMode;
       btn.classList.toggle("is-any", state.kwMode === "or");
     }
+    function closeKeywordSheet() {
+      if (!state.kwOpen) {
+        const sheet = $("kwSheet");
+        if (sheet) {
+          sheet.classList.remove("open");
+          sheet.hidden = true;
+        }
+        return;
+      }
+      state.kwOpen = null;
+      renderKeywords();
+    }
+    $("kwSheetClose").addEventListener("click", closeKeywordSheet);
+    $("kwSheetBack").addEventListener("click", closeKeywordSheet);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeKeywordSheet();
+    });
+
     $("kwMode").addEventListener("click", () => {
       state.kwMode = state.kwMode === "and" ? "or" : "and";
       paintKwMode();
