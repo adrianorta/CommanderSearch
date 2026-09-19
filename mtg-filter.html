@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MTG Filter — Commander colors &amp; types</title>
+  <link rel="preconnect" href="https://api.scryfall.com" />
+  <link rel="preconnect" href="https://cards.scryfall.io" />
+  <link rel="preconnect" href="https://svgs.scryfall.io" />
+  <style>
+    :root {
+      --bg: #0c0e12;
+      --panel: #14181f;
+      --raised: #1b212b;
+      --line: #2a3140;
+      --text: #eef2f7;
+      --muted: #8b95a5;
+      --accent: #6ea8ff;
+      --w: #f8f6d8;
+      --u: #64a7e8;
+      --b: #8a7ca8;
+      --r: #e06a55;
+      --g: #5caf6e;
+      --c: #c9c4b8;
+      --danger: #ef6b6b;
+      --rail: 320px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--rail) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    .rail {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 20px 16px 24px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .stage { padding: 20px 24px 48px; }
+
+    .brand {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      margin: 0;
+    }
+    .brand span { color: var(--muted); font-size: 0.75rem; }
+
+    .sec {
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+    }
+    .sec:first-of-type { border-top: 0; padding-top: 0; }
+
+    label.field {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .field-row .field { margin: 0; }
+
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    input[type="text"], select {
+      width: 100%;
+      background: var(--raised);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus { border-color: #4d6d9a; }
+
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      width: 112px;
+      height: 32px;
+      padding: 2px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--raised);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .mode-toggle::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 2px;
+      width: calc(50% - 2px);
+      border-radius: 999px;
+      background: #2a3b55;
+      box-shadow: 0 0 0 1px #4d73a8;
+      transition: transform 0.18s ease;
+    }
+    .mode-toggle.is-any::before { transform: translateX(100%); }
+    .mode-toggle span {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+    }
+    .mode-toggle[data-mode="and"] span:first-child,
+    .mode-toggle[data-mode="or"] span:last-child {
+      color: #dce9ff;
+    }
+
+    .cmc-slider { display: grid; gap: 6px; }
+    .cmc-slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .cmc-value {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.95rem;
+    }
+    .cmc-hint {
+      color: var(--muted);
+      font-size: 0.68rem;
+    }
+    .cmc-pad {
+      position: relative;
+      height: 84px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--raised);
+      touch-action: none;
+      user-select: none;
+    }
+    .cmc-pad.held { border-color: #4d73a8; }
+    .cmc-rail {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 50%;
+      height: 6px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: var(--line);
+      pointer-events: none;
+    }
+    .cmc-window {
+      position: absolute;
+      top: 50%;
+      height: 28px;
+      min-width: 28px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: #2d5aa0;
+      box-shadow: 0 0 0 3px #6ea8ff33;
+      pointer-events: none;
+    }
+    .cmc-ticks {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    button, .chip {
+      border: 1px solid var(--line);
+      background: var(--raised);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 5px 9px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.78rem;
+    }
+    button.primary {
+      background: #2d5aa0;
+      border-color: #3b6fc0;
+      color: #fff;
+      width: 100%;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      font-weight: 650;
+    }
+    button.ghost {
+      width: 100%;
+      border-radius: 8px;
+      padding: 8px;
+      background: transparent;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .actions {
+      display: grid;
+      gap: 8px;
+      padding: 12px 0 4px;
+      margin-top: auto;
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, transparent, var(--panel) 18%);
+    }
+
+    .mana {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      opacity: 0.32;
+      filter: grayscale(0.5);
+    }
+    .mana img { width: 22px; height: 22px; display: block; }
+    .mana.on { opacity: 1; filter: none; }
+    .mana[data-c="W"].on { box-shadow: 0 0 0 2px var(--w); }
+    .mana[data-c="U"].on { box-shadow: 0 0 0 2px var(--u); }
+    .mana[data-c="B"].on { box-shadow: 0 0 0 2px var(--b); }
+    .mana[data-c="R"].on { box-shadow: 0 0 0 2px var(--r); }
+    .mana[data-c="G"].on { box-shadow: 0 0 0 2px var(--g); }
+    .mana[data-c="C"].on { box-shadow: 0 0 0 2px var(--c); }
+
+    .types, .keywords { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      min-height: 36px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      touch-action: manipulation;
+    }
+    .chip.on { background: #24344c; border-color: #4d73a8; color: #d7e6ff; }
+    .chip.exclude { background: #3a1f24; border-color: #a85a5a; color: #ffd0d0; }
+
+    .kw-list { display: grid; gap: 10px; }
+    .kw-pads {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .kw-pad {
+      aspect-ratio: 1;
+      width: 100%;
+      max-height: 92px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--raised);
+      color: var(--text);
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 0.68rem;
+      font-weight: 650;
+      line-height: 1.15;
+      text-align: center;
+      text-transform: lowercase;
+      letter-spacing: -0.01em;
+      touch-action: manipulation;
+    }
+    .kw-pad.on {
+      background: #24344c;
+      border-color: #6ea8ff;
+      box-shadow: 0 0 0 2px #6ea8ff55;
+      color: #d7e6ff;
+    }
+    .kw-pad.has {
+      border-color: #4d73a8;
+    }
+    .kw-pad .kw-count {
+      min-width: 1.15em;
+      height: 1.15em;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #2d5aa0;
+      color: #fff;
+      font-size: 0.62rem;
+      line-height: 1.15em;
+    }
+    .kw-pad .kw-count:empty { display: none; }
+    .kw-panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--raised);
+      padding: 10px;
+    }
+    .kw-panel[hidden] { display: none; }
+    .kw-panel-title {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .query {
+      margin-top: 10px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.68rem;
+      color: #7f8b9c;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .status { color: var(--muted); font-size: 0.88rem; }
+    .status.error { color: var(--danger); }
+    .view-opts {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .view-opts select { width: auto; min-width: 140px; }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 488 / 680;
+      object-fit: cover;
+      background: #111;
+      display: block;
+    }
+    .meta { padding: 7px 8px 9px; }
+    .name { font-size: 0.8rem; font-weight: 650; line-height: 1.25; }
+    .type { color: var(--muted); font-size: 0.7rem; margin-top: 2px; }
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--muted);
+      padding: 64px 12px;
+    }
+    .more-wrap { display: flex; justify-content: center; margin-top: 20px; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .rail {
+        position: relative;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <h1>Commander filter</h1>
+        <span>Scryfall</span>
+      </div>
+
+      <section class="sec">
+        <label class="field">Identity</label>
+        <div class="row" id="colors">
+          <button class="mana" data-c="W" title="White" aria-pressed="false"><img alt="W" src="https://svgs.scryfall.io/card-symbols/W.svg" /></button>
+          <button class="mana" data-c="U" title="Blue" aria-pressed="false"><img alt="U" src="https://svgs.scryfall.io/card-symbols/U.svg" /></button>
+          <button class="mana" data-c="B" title="Black" aria-pressed="false"><img alt="B" src="https://svgs.scryfall.io/card-symbols/B.svg" /></button>
+          <button class="mana" data-c="R" title="Red" aria-pressed="false"><img alt="R" src="https://svgs.scryfall.io/card-symbols/R.svg" /></button>
+          <button class="mana" data-c="G" title="Green" aria-pressed="false"><img alt="G" src="https://svgs.scryfall.io/card-symbols/G.svg" /></button>
+          <button class="mana" data-c="C" title="Colorless" aria-pressed="false"><img alt="C" src="https://svgs.scryfall.io/card-symbols/C.svg" /></button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <label class="field">Type</label>
+        <div class="types" id="types">
+          <button class="chip" data-t="creature">Creature</button>
+          <button class="chip" data-t="instant">Instant</button>
+          <button class="chip" data-t="sorcery">Sorcery</button>
+          <button class="chip" data-t="artifact">Artifact</button>
+          <button class="chip" data-t="enchantment">Enchantment</button>
+          <button class="chip" data-t="planeswalker">Planeswalker</button>
+          <button class="chip" data-t="battle">Battle</button>
+          <button class="chip" data-t="land">Land</button>
+          <button class="chip" data-t="legendary">Legendary</button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="field-row">
+          <label class="field">Mana value</label>
+          <button type="button" class="chip" id="cmcAny">Any</button>
+        </div>
+        <div class="cmc-slider">
+          <div class="cmc-slider-top">
+            <span class="cmc-value" id="cmcValue">Any</span>
+            <span class="cmc-hint">↕ size · ↔ move</span>
+          </div>
+          <div class="cmc-pad" id="cmcPad" role="slider" aria-label="Mana value range">
+            <div class="cmc-rail"></div>
+            <div class="cmc-window" id="cmcWindow"></div>
+          </div>
+          <div class="cmc-ticks">
+            <span>0</span><span>5</span><span>10</span><span>15</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <label class="field" for="subtypeQuery">Subtype</label>
+        <input id="subtypeQuery" type="text" placeholder="elf, -human, aura" autocomplete="off" spellcheck="false" />
+      </section>
+
+      <section class="sec">
+        <div class="field-row">
+          <label class="field">Keywords &amp; roles</label>
+          <button type="button" class="mode-toggle" id="kwMode" data-mode="and" aria-label="Match all or any selected roles">
+            <span>All</span>
+            <span>Any</span>
+          </button>
+        </div>
+        <div class="kw-list" id="keywords"></div>
+      </section>
+
+      <div class="actions">
+        <button id="searchBtn" class="primary">Search</button>
+        <button id="clearBtn" class="ghost">Reset</button>
+      </div>
+      <div class="query" id="queryPreview">f:commander game:paper</div>
+    </aside>
+
+    <main class="stage">
+      <div class="topbar">
+        <div class="status" id="status">Set filters, then search.</div>
+        <div class="view-opts">
+          <select id="sort" aria-label="Sort">
+            <option value="edhrec" selected>EDHREC rank</option>
+            <option value="name">Name</option>
+            <option value="cmc">Mana value</option>
+            <option value="released">Released</option>
+            <option value="usd">Price</option>
+          </select>
+          <select id="unique" aria-label="Printings">
+            <option value="cards" selected>One printing</option>
+            <option value="prints">All printings</option>
+            <option value="art">Unique art</option>
+          </select>
+        </div>
+      </div>
+      <div class="results" id="results"></div>
+      <div class="more-wrap">
+        <button id="moreBtn" hidden>Load more</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const COLORS = ["W", "U", "B", "R", "G"];
+    const ALL_COLORS = [...COLORS, "C"];
+    const CMC_MAX = 15;
+    const ROLE_ITEMS = {
+      "Mana": [
+        ["Ramp", "otag:ramp"],
+        ["Mana rock", "otag:mana-rock"],
+        ["Mana dork", "otag:mana-dork"],
+        ["Fast mana", "(cmc<=1 (otag:mana-rock or otag:ritual))"],
+        ["Treasure", "(kw:treasure or o:treasure)"],
+        ["Ritual", "otag:ritual"],
+        ["Cost reduce", "(otag:cost-reduction or o:\"less to cast\")"],
+      ],
+      "Combat": [
+        ["Extra combat", "otag:extra-combat"],
+        ["Pump", "(otag:pump or otag:combat-pump or o:\"gets +\")"],
+        ["Anthem", "otag:anthem"],
+        ["Goad", "(otag:goad or kw:goad)"],
+        ["Unblockable", "(otag:unblockable or otag:evasion)"],
+        ["Attacks trigger", "otag:attack-trigger"],
+        ["Fight", "(otag:fight or kw:fight)"],
+        ["Fog", "otag:fog"],
+        ["Overrun", "otag:overrun"],
+      ],
+      "Protection": [
+        ["Pillowfort", "otag:pillowfort"],
+        ["Grant hexproof", "(otag:grants-hexproof or o:\"gain hexproof\" or o:\"gains hexproof\" or o:\"have hexproof\")"],
+        ["Grant indestructible", "(otag:grants-indestructible or o:\"gain indestructible\" or o:\"gains indestructible\")"],
+        ["Damage prevention", "(otag:fog or o:\"prevent all\" o:damage)"],
+      ],
+      "Interaction": [
+        ["Board wipe", "(otag:board-wipe or otag:boardwipe or otag:wrath)"],
+        ["Spot removal", "(otag:removal or otag:removal-creature)"],
+        ["Edict", "otag:edict"],
+        ["Burn", "(otag:burn or otag:burn-creature or otag:burn-player or otag:burn-any)"],
+        ["Counterspell", "(otag:counterspell or otag:counter)"],
+        ["Stifle", "otag:stifle"],
+        ["Bounce", "otag:bounce"],
+        ["Prison", "(otag:prison or otag:pacifism or o:\"can't attack or block\")"],
+        ["Theft", "(otag:theft or otag:steal or o:\"gain control\")"],
+        ["Artifact hate", "otag:removal-artifact"],
+        ["Enchantment hate", "otag:removal-enchantment"],
+        ["Land destruction", "(otag:removal-land or otag:land-destruction)"],
+        ["Graveyard hate", "otag:graveyard-hate"],
+        ["Hand hate", "(otag:hand-hate or o:\"target player discards\" or o:\"target opponent discards\" or o:\"each opponent discards\")"],
+        ["Stax", "(otag:stax or otag:tax)"],
+      ],
+      "Synergy": [
+        ["Sac outlet", "(otag:sacrifice-outlet or otag:sac-outlet)"],
+        ["Blink", "(otag:blink or otag:flicker)"],
+        ["Clone", "(otag:clone or otag:copy)"],
+        ["Lifegain", "otag:lifegain"],
+        ["Drain", "(otag:drain or otag:life-drain)"],
+      ],
+      "Card flow": [
+        ["Draw", "(otag:draw or otag:card-advantage)"],
+        ["Cantrip", "otag:cantrip"],
+        ["Loot", "(otag:loot or otag:rummage)"],
+        ["Impulse", "(otag:impulse or otag:impulse-draw)"],
+        ["Wheel", "otag:wheel"],
+        ["Discard", "otag:discard"],
+        ["Mill", "otag:mill"],
+        ["Self-mill", "(otag:self-mill or otag:mill-self)"],
+        ["Scry", "kw:scry"],
+        ["Surveil", "kw:surveil"],
+        ["Tutor", "otag:tutor"],
+        ["Recursion", "otag:recursion"],
+        ["Reanimate", "otag:reanimate"],
+      ],
+      "Engines": [
+        ["Tokens", "(otag:creates-tokens or o:token)"],
+        ["+1/+1 counters", "(otag:\"+1/+1-counters\" or o:\"+1/+1\")"],
+        ["Proliferate", "kw:proliferate"],
+        ["Food", "(otag:food or kw:food)"],
+        ["Clue", "(otag:clue or kw:clue)"],
+        ["Blood", "(otag:blood or kw:blood)"],
+        ["Copy", "(otag:copy or otag:clone)"],
+        ["ETB", "(otag:etb or otag:etb-trigger or o:\"when ~ enters\")"],
+        ["Dies", "(otag:dies-trigger or otag:death-trigger or o:dies)"],
+        ["Cast trigger", "otag:cast-trigger"],
+      ],
+      "Politics": [
+        ["Group hug", "otag:group-hug"],
+        ["Monarch", "(otag:monarch or o:monarch)"],
+        ["Initiative", "(otag:initiative or o:initiative)"],
+        ["The Ring", "(otag:the-ring or o:\"the ring\" or o:\"ring tempts\")"],
+      ],
+      "Finishers": [
+        ["Win the game", "(otag:win-the-game or o:\"win the game\")"],
+        ["Lose the game", "(otag:lose-the-game or o:\"lose the game\")"],
+        ["Extra turn", "otag:extra-turn"],
+        ["Commander damage", "(otag:commander-damage or o:\"commander damage\")"],
+        ["Poison", "(otag:poison or otag:infect or kw:infect or kw:toxic)"],
+      ],
+    };
+
+    const KEYWORD_BUCKETS = {
+      "Evasion": [
+        "Flying","Reach","Menace","Shadow","Skulk","Fear","Intimidate","Horsemanship",
+        "Landwalk","Forestwalk","Islandwalk","Mountainwalk","Swampwalk","Plainswalk",
+        "Desertwalk","Nonbasic landwalk","Legendary landwalk"
+      ],
+      "Combat": [
+        "Trample","Haste","Vigilance","Deathtouch","Lifelink","First strike","Double strike",
+        "Defender","Prowess","Flanking","Bushido","Exalted","Battle Cry","Melee","Mentor",
+        "Training","Enlist","Provoke","Banding","Double team","Frenzy","Afflict","Rampage",
+        "Power-up","Riot","Unleash","Boast","Decayed","Dethrone","Max speed","Toxic","Infect",
+        "Wither","Poisonous","Annihilator","Crew","Saddle","Station","Encore","Ninjutsu",
+        "Commander ninjutsu","Dash","Blitz","Prowl","Sneak","Web-slinging"
+      ],
+      "Protection": [
+        "Hexproof","Hexproof from","Shroud","Ward","Indestructible","Protection",
+        "Umbra armor","Absorb"
+      ],
+      "Timing": [
+        "Flash","Split second","Phasing","Vanishing","Fading","Suspend","Rebound",
+        "Foretell","Plot","Warp","Hideaway","Daybound","Nightbound","Impending",
+        "Morph","Megamorph","Disguise","Miracle","Fuse","Entwine","Splice","Read Ahead"
+      ],
+      "Mana": [
+        "Affinity","Convoke","Delve","Improvise","Kicker","Multikicker","Emerge","Evoke",
+        "Offering","Prototype","Compleated","Assist","Surge","Spectacle","Escalate",
+        "Cumulative upkeep","Echo","Undaunted","Gift","Freerunning","Spree","Tiered",
+        "Extort","Firebending","Cleave"
+      ],
+      "Attachments": [
+        "Equip","Enchant","Fortify","Reconfigure","Bestow","Aura Swap"
+      ],
+      "Interaction": [
+        "Overload"
+      ],
+      "Synergy": [
+        "Exploit","Bargain","Casualty","Devour"
+      ],
+      "Card flow": [
+        "Cycling","Typecycling","Landcycling","Basic landcycling","Plainscycling",
+        "Islandcycling","Swampcycling","Mountaincycling","Forestcycling","Wizardcycling",
+        "Slivercycling","Halflingcycling","Jump-start","Flashback",
+        "Retrace","Buyback","Madness","Forecast","Transmute","Transfigure","Recover",
+        "Scavenge","Embalm","Eternalize","Unearth","Escape","Disturb","Aftermath",
+        "Harmonize","Mayhem","Dredge","Soulshift"
+      ],
+      "Engines": [
+        "Living weapon","Living metal","Modular","Persist","Undying","Graft","Evolve",
+        "Bloodthirst","Renown","Ravenous","Outlast","Backup","Fabricate","Afterlife",
+        "Ripple","Replicate","Demonstrate","Myriad","Mutate","Craft","Offspring","Awaken",
+        "Squad","Champion","Changeling","Conspire","Soulbond","Ascend","Ingest","Tribute",
+        "Devoid","Augment","Haunt","For Mirrodin!","Specialize",
+        "More Than Meets the Eye","Intensity","Sunburst","Amplify","Level Up","Reinforce",
+        "Job select","Mobilize","Exhaust","Solved","Increment","Paradigm","Teamwork",
+        "Storied","Cipher","Visit","Space sculptor"
+      ],
+      "Commander": [
+        "Partner","Partner with","Friends forever","Doctor's companion","Choose a background",
+        "Companion","Hidden agenda","Double agenda"
+      ],
+      "Finishers": [
+        "Storm","Gravestorm","Epic","Cascade"
+      ],
+    };
+
+    const GROUP_ORDER = [
+      "Mana",
+      "Combat",
+      "Evasion",
+      "Protection",
+      "Timing",
+      "Interaction",
+      "Synergy",
+      "Card flow",
+      "Engines",
+      "Politics",
+      "Attachments",
+      "Commander",
+      "Finishers",
+      "Ability words",
+    ];
+
+    function kwQuery(name) {
+      const key = String(name).toLowerCase();
+      return /[\s\-!]/.test(key) ? 'kw:"' + key + '"' : "kw:" + key;
+    }
+
+    const KEYWORD_CATEGORY = {};
+    Object.entries(KEYWORD_BUCKETS).forEach(([label, names]) => {
+      names.forEach((name) => { KEYWORD_CATEGORY[name.toLowerCase()] = label; });
+    });
+
+    function categorizeKeyword(name) {
+      const key = String(name).toLowerCase();
+      if (KEYWORD_CATEGORY[key]) return KEYWORD_CATEGORY[key];
+      if (key.includes("cycling")) return "Card flow";
+      if (key.includes("walk") || key.includes("flying") || key.includes("menace") || key.includes("skulk")) return "Evasion";
+      if (key.includes("hexproof") || key.includes("protection") || key.includes("ward") || key.includes("shroud")) return "Protection";
+      if (key.includes("flash") || key.includes("morph") || key.includes("bound") || key.includes("suspend") || key.includes("foretell") || key.includes("warp")) return "Timing";
+      if (key.includes("partner") || key.includes("companion") || key.includes("background") || key.includes("agenda")) return "Commander";
+      if (key.includes("equip") || key.includes("enchant") || key.includes("bestow") || key.includes("fortify")) return "Attachments";
+      if (key.includes("storm") || key.includes("epic") || key.includes("cascade")) return "Finishers";
+      if (key.includes("ninjutsu") || key.includes("crew") || key.includes("saddle") || key.includes("trample") || key.includes("haste")) return "Combat";
+      return "Engines";
+    }
+
+    function buildKeywordGroups() {
+      const groups = GROUP_ORDER.map((label) => ({ label, items: [] }));
+      const byLabel = Object.fromEntries(groups.map((g) => [g.label, g]));
+      Object.entries(KEYWORD_BUCKETS).forEach(([label, names]) => {
+        names.forEach((name) => {
+          byLabel[label].items.push([name, kwQuery(name)]);
+        });
+      });
+      Object.entries(ROLE_ITEMS).forEach(([label, items]) => {
+        if (!byLabel[label]) return;
+        byLabel[label].items = items.concat(byLabel[label].items);
+      });
+      byLabel["Ability words"].items = [
+        ["Landfall","kw:landfall"],["Magecraft","kw:magecraft"],["Constellation","kw:constellation"],
+        ["Morbid","kw:morbid"],["Metalcraft","kw:metalcraft"],["Threshold","kw:threshold"],
+        ["Delirium","kw:delirium"],["Raid","kw:raid"],["Battalion","kw:battalion"],["Revolt","kw:revolt"],
+        ["Eminence","kw:eminence"],["Undergrowth","kw:undergrowth"],["Coven","kw:coven"],
+        ["Alliance","kw:alliance"],["Valiant","kw:valiant"],["Enrage","kw:enrage"],
+      ];
+      return groups;
+    }
+
+    const KEYWORD_GROUPS = buildKeywordGroups();
+
+    const state = {
+      colors: new Set(),
+      types: {},
+      keywords: new Set(),
+      kwOpen: null,
+      kwMode: "and",
+      cmcMin: 0,
+      cmcMax: 15,
+      next: null,
+      total: 0,
+      shown: 0,
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $("status");
+    const resultsEl = $("results");
+    const moreBtn = $("moreBtn");
+    const queryPreview = $("queryPreview");
+
+    function selectedColors() {
+      return COLORS.filter((c) => state.colors.has(c));
+    }
+
+    function identityClause() {
+      const colors = selectedColors();
+      const colorless = state.colors.has("C");
+      if (!colors.length && !colorless) return "";
+      if (!colors.length && colorless) return "id:c";
+      return "id<=" + colors.join("");
+    }
+
+    function tagClause(map) {
+      const included = Object.keys(map).filter((t) => map[t] === "in");
+      const excluded = Object.keys(map).filter((t) => map[t] === "out");
+      const parts = [];
+      const fmt = (t) => (t.includes(" ") ? 't:"' + t + '"' : "t:" + t);
+      if (included.length === 1) parts.push(fmt(included[0]));
+      else if (included.length > 1) parts.push("(" + included.map(fmt).join(" or ") + ")");
+      excluded.forEach((t) => parts.push("-" + fmt(t)));
+      return parts.join(" ");
+    }
+
+    function typeClause() {
+      return tagClause(state.types);
+    }
+
+    function subtypeClause() {
+      const raw = ($("subtypeQuery")?.value || "").trim();
+      if (!raw) return "";
+      const tokens = [];
+      const re = /"([^"]+)"|(\S+)/g;
+      let m;
+      while ((m = re.exec(raw.replace(/,/g, " ")))) {
+        tokens.push((m[1] || m[2]).trim());
+      }
+      const included = [];
+      const excluded = [];
+      tokens.forEach((tok) => {
+        if (!tok) return;
+        const neg = tok.startsWith("-") || tok.startsWith("−");
+        const name = (neg ? tok.slice(1) : tok).trim().toLowerCase();
+        if (!name) return;
+        const term = name.includes(" ") || name.includes("'") ? 't:"' + name + '"' : "t:" + name;
+        (neg ? excluded : included).push(neg ? "-" + term : term);
+      });
+      const parts = [];
+      if (included.length === 1) parts.push(included[0]);
+      else if (included.length > 1) parts.push("(" + included.join(" or ") + ")");
+      parts.push(...excluded);
+      return parts.join(" ");
+    }
+
+    function buildQuery() {
+      const parts = ["f:commander", "game:paper"];
+      const identity = identityClause();
+      if (identity) parts.push(identity);
+      const types = typeClause();
+      if (types) parts.push(types);
+      const subtypes = subtypeClause();
+      if (subtypes) parts.push(subtypes);
+      const cmc = cmcClause();
+      if (cmc) parts.push(cmc);
+      const kws = [...state.keywords];
+      if (kws.length) {
+        const joiner = state.kwMode === "or" ? " or " : " ";
+        const clause = kws.join(joiner);
+        parts.push(kws.length > 1 && state.kwMode === "or" ? "(" + clause + ")" : clause);
+      }
+      return parts.join(" ");
+    }
+
+    function cmcIsAny() {
+      return state.cmcMin <= 0 && state.cmcMax >= CMC_MAX;
+    }
+
+    function cmcClause() {
+      if (cmcIsAny()) return "";
+      if (state.cmcMin === state.cmcMax) return "cmc=" + state.cmcMin;
+      return "cmc>=" + state.cmcMin + " cmc<=" + state.cmcMax;
+    }
+
+    function renderCmc() {
+      const any = cmcIsAny();
+      $("cmcValue").textContent = any ? "Any" : state.cmcMin === state.cmcMax
+        ? String(state.cmcMin)
+        : state.cmcMin + "–" + state.cmcMax;
+      $("cmcAny").classList.toggle("on", any);
+      const win = $("cmcWindow");
+      const pad = $("cmcPad");
+      if (!win || !pad) return;
+      const rail = pad.querySelector(".cmc-rail");
+      const span = CMC_MAX || 1;
+      const railW = rail.clientWidth || Math.max(1, pad.clientWidth - 28);
+      const leftPad = rail.offsetLeft || 14;
+      const x0 = leftPad + (state.cmcMin / span) * railW;
+      const x1 = leftPad + (state.cmcMax / span) * railW;
+      win.style.left = Math.max(8, x0 - 10) + "px";
+      win.style.width = Math.max(28, x1 - x0 + 20) + "px";
+    }
+
+    function updatePreview() {
+      queryPreview.textContent = buildQuery();
+    }
+
+    document.querySelectorAll("#colors .mana").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const c = btn.dataset.c;
+        if (state.colors.has(c)) state.colors.delete(c);
+        else state.colors.add(c);
+        btn.classList.toggle("on", state.colors.has(c));
+        btn.setAttribute("aria-pressed", String(state.colors.has(c)));
+        updatePreview();
+      });
+    });
+
+    document.querySelectorAll("#types .chip").forEach((btn) => bindTagChip(btn, state.types));
+
+    function paintTagChip(btn, map) {
+      const t = btn.dataset.t;
+      const base = btn.dataset.label;
+      const mode = map[t];
+      btn.textContent = mode === "out" ? "−" + base : base;
+      btn.classList.toggle("on", mode === "in");
+      btn.classList.toggle("exclude", mode === "out");
+      btn.setAttribute("aria-pressed", mode ? "true" : "false");
+    }
+
+    function bindTagChip(btn, map) {
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.addEventListener("click", () => {
+        const t = btn.dataset.t;
+        const cur = map[t];
+        if (!cur) map[t] = "in";
+        else if (cur === "in") map[t] = "out";
+        else delete map[t];
+        paintTagChip(btn, map);
+        updatePreview();
+      });
+    }
+
+    function selectedInGroup(group) {
+      return group.items.filter(([, q]) => state.keywords.has(q)).length;
+    }
+
+    function renderKeywords() {
+      const root = $("keywords");
+      root.innerHTML = "";
+      const pads = document.createElement("div");
+      pads.className = "kw-pads";
+      const panel = document.createElement("div");
+      panel.className = "kw-panel";
+      const panelTitle = document.createElement("div");
+      panelTitle.className = "kw-panel-title";
+      const row = document.createElement("div");
+      row.className = "keywords";
+      panel.appendChild(panelTitle);
+      panel.appendChild(row);
+
+      function paintPads() {
+        pads.querySelectorAll(".kw-pad").forEach((btn) => {
+          const group = KEYWORD_GROUPS.find((g) => g.label === btn.dataset.group);
+          const n = group ? selectedInGroup(group) : 0;
+          btn.classList.toggle("on", state.kwOpen === btn.dataset.group);
+          btn.classList.toggle("has", n > 0);
+          const count = btn.querySelector(".kw-count");
+          if (count) count.textContent = n ? String(n) : "";
+        });
+      }
+
+      function showGroup(label) {
+        const group = KEYWORD_GROUPS.find((g) => g.label === label);
+        if (!group || state.kwOpen !== label) {
+          panel.hidden = true;
+          row.innerHTML = "";
+          paintPads();
+          return;
+        }
+        panel.hidden = false;
+        panelTitle.textContent = group.label;
+        row.innerHTML = "";
+        group.items.forEach(([name, query]) => {
+          const btn = document.createElement("button");
+          btn.className = "chip" + (state.keywords.has(query) ? " on" : "");
+          btn.type = "button";
+          btn.textContent = name;
+          btn.addEventListener("click", () => {
+            if (state.keywords.has(query)) state.keywords.delete(query);
+            else state.keywords.add(query);
+            btn.classList.toggle("on", state.keywords.has(query));
+            paintPads();
+            updatePreview();
+          });
+          row.appendChild(btn);
+        });
+        paintPads();
+      }
+
+      KEYWORD_GROUPS.forEach((group) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "kw-pad";
+        btn.dataset.group = group.label;
+        btn.setAttribute("aria-pressed", "false");
+        const label = document.createElement("span");
+        label.textContent = group.label;
+        const count = document.createElement("span");
+        count.className = "kw-count";
+        btn.appendChild(label);
+        btn.appendChild(count);
+        btn.addEventListener("click", () => {
+          state.kwOpen = state.kwOpen === group.label ? null : group.label;
+          showGroup(group.label);
+        });
+        pads.appendChild(btn);
+      });
+
+      root.appendChild(pads);
+      root.appendChild(panel);
+      showGroup(state.kwOpen);
+    }
+
+    function paintKwMode() {
+      const btn = $("kwMode");
+      btn.dataset.mode = state.kwMode;
+      btn.classList.toggle("is-any", state.kwMode === "or");
+    }
+    $("kwMode").addEventListener("click", () => {
+      state.kwMode = state.kwMode === "and" ? "or" : "and";
+      paintKwMode();
+      updatePreview();
+    });
+
+    ["sort", "unique"].forEach((id) => {
+      $(id).addEventListener("change", updatePreview);
+    });
+    $("subtypeQuery").addEventListener("input", updatePreview);
+    $("subtypeQuery").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        search(true);
+      }
+    });
+
+    const cmcDrag = { active: false, axis: null, x: 0, y: 0, min: 0, max: 15 };
+
+    function applyCmcWindow(min, max) {
+      min = Math.max(0, Math.min(CMC_MAX, Math.round(min)));
+      max = Math.max(0, Math.min(CMC_MAX, Math.round(max)));
+      if (min > max) {
+        const t = min;
+        min = max;
+        max = t;
+      }
+      state.cmcMin = min;
+      state.cmcMax = max;
+      renderCmc();
+      updatePreview();
+    }
+
+    function bindCmcPad() {
+      const pad = $("cmcPad");
+      const stepX = () => {
+        const rail = pad.querySelector(".cmc-rail");
+        return Math.max(12, (rail.clientWidth || pad.clientWidth - 28) / CMC_MAX);
+      };
+      const stepY = 26;
+
+      pad.addEventListener("pointerdown", (e) => {
+        pad.setPointerCapture(e.pointerId);
+        pad.classList.add("held");
+        cmcDrag.active = true;
+        cmcDrag.axis = null;
+        cmcDrag.x = e.clientX;
+        cmcDrag.y = e.clientY;
+        cmcDrag.min = state.cmcMin;
+        cmcDrag.max = state.cmcMax;
+      });
+      pad.addEventListener("pointermove", (e) => {
+        if (!cmcDrag.active) return;
+        const dx = e.clientX - cmcDrag.x;
+        const dy = e.clientY - cmcDrag.y;
+        if (!cmcDrag.axis) {
+          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+          cmcDrag.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+        }
+        const startWidth = cmcDrag.max - cmcDrag.min + 1;
+        const startMid = (cmcDrag.min + cmcDrag.max) / 2;
+        let width = startWidth;
+        let mid = startMid;
+        if (cmcDrag.axis === "y") {
+          width = Math.max(1, Math.min(CMC_MAX + 1, startWidth + Math.round(-dy / stepY)));
+        } else {
+          mid = startMid + Math.round(dx / stepX());
+        }
+        let start = Math.round(mid - (width - 1) / 2);
+        start = Math.max(0, Math.min(CMC_MAX + 1 - width, start));
+        applyCmcWindow(start, start + width - 1);
+      });
+      const endDrag = (e) => {
+        if (!cmcDrag.active) return;
+        cmcDrag.active = false;
+        cmcDrag.axis = null;
+        pad.classList.remove("held");
+        if (e && pad.hasPointerCapture?.(e.pointerId)) pad.releasePointerCapture(e.pointerId);
+      };
+      pad.addEventListener("pointerup", endDrag);
+      pad.addEventListener("pointercancel", endDrag);
+    }
+    bindCmcPad();
+    $("cmcAny").addEventListener("click", () => applyCmcWindow(0, CMC_MAX));
+    window.addEventListener("resize", renderCmc);
+
+    $("searchBtn").addEventListener("click", () => {
+      if (state.kwOpen) {
+        state.kwOpen = null;
+        renderKeywords();
+      }
+      search(true);
+    });
+    $("moreBtn").addEventListener("click", () => search(false));
+    $("clearBtn").addEventListener("click", () => {
+      state.colors.clear();
+      state.types = {};
+      document.querySelectorAll("#colors .mana").forEach((b) => {
+        b.classList.remove("on");
+        b.setAttribute("aria-pressed", "false");
+      });
+      document.querySelectorAll("#types .chip").forEach((b) => {
+        b.classList.remove("on", "exclude");
+        if (b.dataset.label) b.textContent = b.dataset.label;
+      });
+      $("subtypeQuery").value = "";
+      state.keywords.clear();
+      state.kwOpen = null;
+      state.kwMode = "and";
+      paintKwMode();
+      renderKeywords();
+      state.cmcMin = 0;
+      state.cmcMax = CMC_MAX;
+      renderCmc();
+      resultsEl.innerHTML = "";
+      moreBtn.hidden = true;
+      statusEl.classList.remove("error");
+      statusEl.textContent = "Set filters, then search.";
+      updatePreview();
+    });
+
+    function setStatus(text, isError = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle("error", isError);
+    }
+
+    function imageFor(card) {
+      if (card.image_uris?.normal) return card.image_uris.normal;
+      if (card.card_faces?.[0]?.image_uris?.normal) return card.card_faces[0].image_uris.normal;
+      return "";
+    }
+
+    function typeFor(card) {
+      return card.type_line || card.card_faces?.[0]?.type_line || "";
+    }
+
+    function renderCards(cards, append) {
+      if (!append) resultsEl.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const card of cards) {
+        const el = document.createElement("article");
+        el.className = "card";
+        const img = imageFor(card);
+        const scry = card.scryfall_uri || "#";
+        el.innerHTML =
+          '<a href="' + scry + '" target="_blank" rel="noopener">' +
+          (img ? '<img loading="lazy" alt="" src="' + img + '" />' : "") +
+          "</a>" +
+          '<div class="meta"><div class="name"></div><div class="type"></div></div>';
+        el.querySelector(".name").textContent = card.name;
+        el.querySelector(".type").textContent = typeFor(card);
+        frag.appendChild(el);
+      }
+      resultsEl.appendChild(frag);
+    }
+
+    async function search(reset) {
+      const q = buildQuery();
+      const unique = $("unique").value;
+      const sort = $("sort").value;
+      let url;
+      if (reset) {
+        url = "https://api.scryfall.com/cards/search?" + new URLSearchParams({
+          q,
+          unique,
+          order: sort,
+          dir: sort === "edhrec" || sort === "usd" || sort === "cmc" ? "asc" : "auto",
+        });
+        state.shown = 0;
+        state.total = 0;
+        state.next = null;
+        moreBtn.hidden = true;
+      } else {
+        url = state.next;
+        if (!url) return;
+      }
+
+      $("searchBtn").disabled = true;
+      moreBtn.disabled = true;
+      setStatus(reset ? "Searching Scryfall…" : "Loading more…");
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.details || data.code || "Search failed");
+        }
+        const cards = data.data || [];
+        state.total = data.total_cards || cards.length;
+        state.shown += cards.length;
+        state.next = data.has_more ? data.next_page : null;
+        renderCards(cards, !reset);
+        moreBtn.hidden = !state.next;
+        const colorNote = identityClause() || "any color identity";
+        setStatus(state.shown + " of " + state.total.toLocaleString() + " cards · " + colorNote);
+      } catch (err) {
+        if (reset) resultsEl.innerHTML = '<div class="empty">No cards matched.</div>';
+        setStatus(err.message || "Search failed", true);
+        moreBtn.hidden = true;
+      } finally {
+        $("searchBtn").disabled = false;
+        moreBtn.disabled = false;
+      }
+    }
+
+    function kwQuery(name) {
+      const key = name.toLowerCase();
+      return /[\s\-!]/.test(key) ? 'kw:"' + key + '"' : "kw:" + key;
+    }
+
+    function usedKeywordNames() {
+      const used = new Set();
+      KEYWORD_GROUPS.forEach((group) => {
+        group.items.forEach(([, q]) => {
+          const m = String(q).match(/^kw:"?([^"]+)"?$/i);
+          if (m) used.add(m[1].toLowerCase());
+        });
+      });
+      return used;
+    }
+
+    function addUniqueItem(group, name, query) {
+      const key = name.toLowerCase();
+      if (group.items.some(([n]) => n.toLowerCase() === key)) return;
+      group.items.push([name, query]);
+    }
+
+    async function hydrateCatalogs() {
+      try {
+        const headers = { Accept: "application/json" };
+        const [kwRes, awRes] = await Promise.all([
+          fetch("https://api.scryfall.com/catalog/keyword-abilities", { headers }),
+          fetch("https://api.scryfall.com/catalog/ability-words", { headers }),
+        ]);
+        const kw = kwRes.ok ? await kwRes.json() : { data: [] };
+        const aw = awRes.ok ? await awRes.json() : { data: [] };
+        const skipKeywords = new Set(["affinitycycling"]);
+        const used = usedKeywordNames();
+        const byLabel = Object.fromEntries(KEYWORD_GROUPS.map((g) => [g.label, g]));
+        (kw.data || []).forEach((name) => {
+          const key = String(name).toLowerCase();
+          if (skipKeywords.has(key) || used.has(key)) return;
+          const label = categorizeKeyword(name);
+          const group = byLabel[label] || byLabel["Engines"];
+          addUniqueItem(group, name, kwQuery(name));
+          used.add(String(name).toLowerCase());
+        });
+        const awGroup = byLabel["Ability words"];
+        if (awGroup && aw.data?.length) {
+          aw.data.forEach((name) => addUniqueItem(awGroup, name, kwQuery(name)));
+          const pinned = new Set(["landfall","magecraft","constellation","morbid","metalcraft","threshold","delirium","raid","battalion","revolt","eminence","undergrowth","coven","alliance","valiant","enrage"]);
+          awGroup.items.sort((a, b) => {
+            const ap = pinned.has(a[0].toLowerCase()) ? 0 : 1;
+            const bp = pinned.has(b[0].toLowerCase()) ? 0 : 1;
+            return ap - bp || a[0].localeCompare(b[0]);
+          });
+        }
+        KEYWORD_GROUPS.forEach((group) => {
+          const roles = (ROLE_ITEMS[group.label] || []).map(([n]) => n.toLowerCase());
+          const head = group.items.filter(([n]) => roles.includes(n.toLowerCase()));
+          const rest = group.items.filter(([n]) => !roles.includes(n.toLowerCase()))
+            .sort((a, b) => a[0].localeCompare(b[0]));
+          group.items = head.concat(rest);
+        });
+        renderKeywords();
+      } catch (_) {
+        /* keep curated lists offline */
+      }
+    }
+
+    renderKeywords();
+    renderCmc();
+    paintKwMode();
+    updatePreview();
+    hydrateCatalogs();
+  </script>
+</body>
+</html>
