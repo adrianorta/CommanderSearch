@@ -482,7 +482,7 @@
     }
     .kw-sheet-handle {
       width: 100%;
-      height: 22px;
+      height: 28px;
       margin: 0;
       padding: 0;
       display: flex;
@@ -1322,35 +1322,44 @@
     (function bindSheetSwipe() {
       const sheet = $("kwSheet");
       const card = sheet.querySelector(".kw-sheet-card");
-      const grab = (t) => t.closest(".kw-sheet-handle, .kw-sheet-bar");
-      const drag = { on: false, y: 0, last: 0, v: 0 };
+      const drag = { on: false, armed: false, y: 0, last: 0, v: 0 };
       const resetCard = () => {
         card.classList.remove("dragging");
         card.style.transform = "";
       };
       card.addEventListener("pointerdown", (e) => {
-        if (!grab(e.target)) return;
+        if (e.target.closest(".kw-sheet-close")) return;
         drag.on = true;
+        drag.armed = false;
         drag.y = e.clientY;
         drag.last = e.clientY;
         drag.v = 0;
-        card.classList.add("dragging");
-        card.setPointerCapture(e.pointerId);
       });
       card.addEventListener("pointermove", (e) => {
         if (!drag.on) return;
         const dy = e.clientY - drag.y;
+        if (!drag.armed) {
+          if (Math.abs(dy) < 10) return;
+          if (dy < 0 || card.scrollTop > 0) {
+            drag.on = false;
+            return;
+          }
+          drag.armed = true;
+          card.classList.add("dragging");
+          card.setPointerCapture(e.pointerId);
+        }
         drag.v = e.clientY - drag.last;
         drag.last = e.clientY;
         card.style.transform = "translateY(" + Math.max(0, dy) + "px)";
       });
       const end = (e) => {
         if (!drag.on) return;
-        drag.on = false;
+        const armed = drag.armed;
         const dy = Math.max(0, e.clientY - drag.y);
-        const shouldClose = dy > 90 || drag.v > 12;
+        drag.on = false;
+        drag.armed = false;
         resetCard();
-        if (shouldClose) closeKeywordSheet();
+        if (armed && (dy > 72 || drag.v > 10)) closeKeywordSheet();
       };
       card.addEventListener("pointerup", end);
       card.addEventListener("pointercancel", end);
