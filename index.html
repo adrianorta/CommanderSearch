@@ -15,7 +15,10 @@
       --line: #2a3140;
       --text: #eef2f7;
       --muted: #8b95a5;
-      --accent: #6ea8ff;
+      --accent: #c9c4b8;
+      --accent-2: #c9c4b8;
+      --accent-glow: rgba(201, 196, 184, 0.4);
+      --accent-soft: #2a2c30;
       --w: #f8f6d8;
       --u: #64a7e8;
       --b: #8a7ca8;
@@ -33,7 +36,6 @@
       background: var(--bg);
       color: var(--text);
     }
-
     .app {
       display: grid;
       grid-template-columns: var(--rail) minmax(0, 1fr);
@@ -130,8 +132,8 @@
       left: 2px;
       width: calc(50% - 2px);
       border-radius: 999px;
-      background: #2a3b55;
-      box-shadow: 0 0 0 1px #4d73a8;
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 12px var(--accent-glow);
       transition: transform 0.18s ease;
     }
     .mode-toggle.is-any::before { transform: translateX(100%); }
@@ -200,8 +202,8 @@
       min-width: 28px;
       transform: translateY(-50%);
       border-radius: 999px;
-      background: #2d5aa0;
-      box-shadow: 0 0 0 3px #6ea8ff33;
+      background: color-mix(in srgb, var(--accent) 70%, #1b212b);
+      box-shadow: 0 0 0 3px var(--accent-glow);
       pointer-events: none;
     }
     .cmc-ticks {
@@ -228,20 +230,30 @@
       font-weight: 650;
     }
     .cmc-tick.span {
-      background: #1c2a3d;
-      border-color: #3a5478;
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
       color: #c5d8f5;
     }
     .cmc-tick.on {
-      background: #2d5aa0;
-      border-color: #6ea8ff;
+      background: color-mix(in srgb, var(--accent) 70%, #1b212b);
+      border-color: var(--accent);
       color: #fff;
+      box-shadow: 0 0 12px var(--accent-glow);
     }
     .cmc-desk-hint {
       color: var(--muted);
       font-size: 0.68rem;
     }
 
+    button, .chip, .kw-pad, .mana, .cmc-tick {
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:focus, .chip:focus, .kw-pad:focus, .mana:focus, .cmc-tick:focus {
+      outline: none;
+    }
+    button:focus-visible, .chip:focus-visible, .kw-pad:focus-visible {
+      box-shadow: 0 0 0 2px var(--accent-glow), 0 0 16px var(--accent-glow);
+    }
     button, .chip {
       border: 1px solid var(--line);
       background: var(--raised);
@@ -253,8 +265,8 @@
       font-size: 0.78rem;
     }
     button.primary {
-      background: #2d5aa0;
-      border-color: #3b6fc0;
+      background: color-mix(in srgb, var(--accent) 55%, #1b212b);
+      border-color: color-mix(in srgb, var(--accent) 70%, #3b6fc0);
       color: #fff;
       width: 100%;
       border-radius: 8px;
@@ -306,8 +318,24 @@
       font-size: 0.8rem;
       touch-action: manipulation;
     }
-    .chip.on { background: #24344c; border-color: #4d73a8; color: #d7e6ff; }
-    .chip.exclude { background: #3a1f24; border-color: #a85a5a; color: #ffd0d0; }
+    .chip.on {
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 75%, #fff);
+      color: #f4f8ff;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+        0 0 12px var(--accent-glow),
+        0 0 24px color-mix(in srgb, var(--accent-2) 28%, transparent);
+    }
+    .chip.exclude {
+      background: color-mix(in srgb, var(--danger) 18%, var(--raised));
+      border-color: color-mix(in srgb, var(--danger) 80%, #fff);
+      color: #ffd0d0;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent),
+        0 0 12px color-mix(in srgb, var(--danger) 40%, transparent),
+        0 0 24px color-mix(in srgb, var(--danger) 22%, transparent);
+    }
 
     .kw-list { display: grid; gap: 10px; }
     .kw-pads {
@@ -333,20 +361,23 @@
       touch-action: manipulation;
     }
     .kw-pad.on {
-      background: #24344c;
-      border-color: #6ea8ff;
-      box-shadow: 0 0 0 2px #6ea8ff55;
-      color: #d7e6ff;
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 75%, #fff);
+      color: #f4f8ff;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+        0 0 12px var(--accent-glow),
+        0 0 24px color-mix(in srgb, var(--accent-2) 28%, transparent);
     }
     .kw-pad.has {
-      border-color: #4d73a8;
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
     }
     .kw-pad .kw-count {
       min-width: 1.15em;
       height: 1.15em;
       padding: 0 4px;
       border-radius: 999px;
-      background: #2d5aa0;
+      background: color-mix(in srgb, var(--accent) 70%, #1b212b);
       color: #fff;
       font-size: 0.62rem;
       line-height: 1.15em;
@@ -388,11 +419,11 @@
     .status { color: var(--muted); font-size: 0.88rem; }
     .status.error { color: var(--danger); }
     .view-opts {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
-      align-items: center;
     }
-    .view-opts select { width: auto; min-width: 140px; }
+    .view-opts select { width: 100%; min-width: 0; }
 
     .results {
       display: grid;
@@ -420,6 +451,17 @@
       text-align: center;
       color: var(--muted);
       padding: 64px 12px;
+    }
+    .empty-title {
+      color: var(--text);
+      font-size: 1.15rem;
+      font-weight: 650;
+      margin-bottom: 8px;
+    }
+    .empty-hint {
+      max-width: 28em;
+      margin: 0 auto;
+      line-height: 1.45;
     }
     .more-wrap { display: flex; justify-content: center; margin-top: 20px; }
 
@@ -468,6 +510,8 @@
       letter-spacing: -0.02em;
     }
     .kw-sheet-close {
+      position: relative;
+      z-index: 2;
       width: 36px;
       height: 36px;
       padding: 0;
@@ -563,7 +607,7 @@
       .stage {
         padding: 24px 28px 64px;
         background:
-          radial-gradient(ellipse at top, #161b24 0%, var(--bg) 55%);
+          radial-gradient(ellipse at top, var(--panel) 0%, var(--bg) 55%);
       }
       .topbar { margin-bottom: 20px; }
       .status { font-size: 0.95rem; }
@@ -699,15 +743,6 @@
       </section>
 
       <div class="actions">
-        <button id="searchBtn" class="primary">Search</button>
-        <button id="clearBtn" class="ghost">Reset</button>
-      </div>
-      <div class="query" id="queryPreview">f:commander game:paper</div>
-    </aside>
-
-    <main class="stage">
-      <div class="topbar">
-        <div class="status" id="status">Set filters, then search.</div>
         <div class="view-opts">
           <select id="sort" aria-label="Sort">
             <option value="edhrec" selected>EDHREC rank</option>
@@ -722,6 +757,15 @@
             <option value="art">Unique art</option>
           </select>
         </div>
+        <button id="searchBtn" class="primary">Search</button>
+        <button id="clearBtn" class="ghost">Reset</button>
+      </div>
+      <div class="query" id="queryPreview">f:commander game:paper</div>
+    </aside>
+
+    <main class="stage">
+      <div class="topbar">
+        <div class="status" id="status">Set filters, then search.</div>
       </div>
       <div class="results" id="results">
         <div class="empty">Set filters above, then search.</div>
@@ -995,16 +1039,55 @@
       return COLORS.filter((c) => state.colors.has(c));
     }
 
+    const MANA_RGB = {
+      W: [248, 246, 216],
+      U: [100, 167, 232],
+      B: [138, 124, 168],
+      R: [224, 106, 85],
+      G: [92, 175, 110],
+      C: [201, 196, 184],
+    };
+
+    function hexFromRgb(rgb) {
+      return "#" + rgb.map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")).join("");
+    }
+
+    function applyThemeRgb(rgb) {
+      const root = document.documentElement;
+      const a = hexFromRgb(rgb);
+      root.style.setProperty("--accent", a);
+      root.style.setProperty("--accent-2", a);
+      root.style.setProperty("--accent-glow", "color-mix(in srgb, " + a + " 48%, transparent)");
+      root.style.setProperty("--accent-soft", "color-mix(in srgb, " + a + " 20%, #1b212b)");
+      root.style.setProperty("--bg", "color-mix(in srgb, " + a + " 8%, #0c0e12)");
+      root.style.setProperty("--panel", "color-mix(in srgb, " + a + " 10%, #14181f)");
+      root.style.setProperty("--raised", "color-mix(in srgb, " + a + " 12%, #1b212b)");
+      root.style.setProperty("--line", "color-mix(in srgb, " + a + " 18%, #2a3140)");
+    }
+
+    function themeFromColors() {
+      const picks = ALL_COLORS.filter((c) => state.colors.has(c));
+      if (!picks.length) {
+        applyThemeRgb(MANA_RGB.C);
+        return;
+      }
+      const rgbs = picks.map((c) => MANA_RGB[c]);
+      const avg = [0, 1, 2].map((i) => Math.round(rgbs.reduce((s, r) => s + r[i], 0) / rgbs.length));
+      applyThemeRgb(avg);
+    }
+
     function identityClause() {
       const colors = selectedColors();
       const colorless = state.colors.has("C");
       if (!colors.length && !colorless) return "";
       if (!colors.length && colorless) {
-        return state.idMode === "exact" ? "id:c" : "c:c";
+        if (state.idMode === "color") return "c=c";
+        if (state.idMode === "exact") return "id<=c";
+        return "c>=c";
       }
-      const code = colors.join("");
-      if (state.idMode === "color") return "c:" + code;
-      if (state.idMode === "exact") return "id:" + code;
+      const code = colors.join("").toLowerCase();
+      if (state.idMode === "color") return "c=" + code;
+      if (state.idMode === "exact") return "id<=" + code;
       return "c>=" + code;
     }
 
@@ -1152,8 +1235,14 @@
         const c = btn.dataset.c;
         if (state.colors.has(c)) state.colors.delete(c);
         else state.colors.add(c);
-        btn.classList.toggle("on", state.colors.has(c));
-        btn.setAttribute("aria-pressed", String(state.colors.has(c)));
+        if (state.colors.has("C") && selectedColors().length) {
+          state.colors.delete("C");
+        }
+        document.querySelectorAll("#colors .mana").forEach((b) => {
+          b.classList.toggle("on", state.colors.has(b.dataset.c));
+          b.setAttribute("aria-pressed", String(state.colors.has(b.dataset.c)));
+        });
+        themeFromColors();
         updatePreview();
       });
     });
@@ -1313,7 +1402,12 @@
       state.kwOpen = null;
       renderKeywords();
     }
-    $("kwSheetClose").addEventListener("click", closeKeywordSheet);
+    $("kwSheetClose").addEventListener("pointerdown", (e) => e.stopPropagation());
+    $("kwSheetClose").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeKeywordSheet();
+    });
     $("kwSheetBack").addEventListener("click", closeKeywordSheet);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeKeywordSheet();
@@ -1322,44 +1416,35 @@
     (function bindSheetSwipe() {
       const sheet = $("kwSheet");
       const card = sheet.querySelector(".kw-sheet-card");
-      const drag = { on: false, armed: false, y: 0, last: 0, v: 0 };
+      const grab = (t) => !t.closest(".kw-sheet-close") && t.closest(".kw-sheet-handle, .kw-sheet-bar");
+      const drag = { on: false, y: 0, last: 0, v: 0 };
       const resetCard = () => {
         card.classList.remove("dragging");
         card.style.transform = "";
       };
       card.addEventListener("pointerdown", (e) => {
-        if (e.target.closest(".kw-sheet-close")) return;
+        if (!grab(e.target)) return;
         drag.on = true;
-        drag.armed = false;
         drag.y = e.clientY;
         drag.last = e.clientY;
         drag.v = 0;
+        card.classList.add("dragging");
+        card.setPointerCapture(e.pointerId);
       });
       card.addEventListener("pointermove", (e) => {
         if (!drag.on) return;
         const dy = e.clientY - drag.y;
-        if (!drag.armed) {
-          if (Math.abs(dy) < 10) return;
-          if (dy < 0 || card.scrollTop > 0) {
-            drag.on = false;
-            return;
-          }
-          drag.armed = true;
-          card.classList.add("dragging");
-          card.setPointerCapture(e.pointerId);
-        }
         drag.v = e.clientY - drag.last;
         drag.last = e.clientY;
         card.style.transform = "translateY(" + Math.max(0, dy) + "px)";
       });
       const end = (e) => {
         if (!drag.on) return;
-        const armed = drag.armed;
-        const dy = Math.max(0, e.clientY - drag.y);
         drag.on = false;
-        drag.armed = false;
+        const dy = Math.max(0, e.clientY - drag.y);
+        const shouldClose = dy > 90 || drag.v > 12;
         resetCard();
-        if (armed && (dy > 72 || drag.v > 10)) closeKeywordSheet();
+        if (shouldClose) closeKeywordSheet();
       };
       card.addEventListener("pointerup", end);
       card.addEventListener("pointercancel", end);
@@ -1475,6 +1560,7 @@
         b.classList.remove("on");
         b.setAttribute("aria-pressed", "false");
       });
+      themeFromColors();
       document.querySelectorAll("#types .chip").forEach((b) => {
         b.classList.remove("on", "exclude");
         if (b.dataset.label) b.textContent = b.dataset.label;
@@ -1532,6 +1618,37 @@
       resultsEl.appendChild(frag);
     }
 
+    function showEmptyResults(kind, detail) {
+      const wrap = document.createElement("div");
+      wrap.className = "empty";
+      const title = document.createElement("div");
+      title.className = "empty-title";
+      const hint = document.createElement("div");
+      hint.className = "empty-hint";
+      if (kind === "none") {
+        title.textContent = "Nothing in that slice";
+        const tips = [];
+        if (state.kwMode === "and" && state.keywords.size > 1) {
+          tips.push("All means a card must have every selected role. Flip to Any.");
+        }
+        if (state.idMode === "color") {
+          tips.push("Exact is only those colors and no others. Try Having or Identity.");
+        } else if (state.idMode === "exact") {
+          tips.push("Identity only allows those colors. Try Having if you want extra colors.");
+        }
+        if (!cmcIsAny()) tips.push("Widen the mana range.");
+        if (!tips.length) tips.push("Drop a type or role, or widen colors, then search again.");
+        hint.textContent = tips[0];
+      } else {
+        title.textContent = "Couldn’t search";
+        hint.textContent = "Check the query preview and try again.";
+      }
+      wrap.appendChild(title);
+      wrap.appendChild(hint);
+      resultsEl.innerHTML = "";
+      resultsEl.appendChild(wrap);
+    }
+
     async function search(reset) {
       const q = buildQuery();
       const unique = $("unique").value;
@@ -1561,19 +1678,27 @@
         const res = await fetch(url);
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.details || data.code || "Search failed");
+          const err = new Error(data.details || data.code || "Search failed");
+          err.code = data.code;
+          throw err;
         }
         const cards = data.data || [];
+        if (!cards.length) {
+          showEmptyResults("none");
+          setStatus("0 cards");
+          moreBtn.hidden = true;
+          return;
+        }
         state.total = data.total_cards || cards.length;
         state.shown += cards.length;
         state.next = data.has_more ? data.next_page : null;
         renderCards(cards, !reset);
         moreBtn.hidden = !state.next;
-        const colorNote = identityClause() || "any color identity";
+        const colorNote = identityClause() || "any colors";
         setStatus(state.shown + " of " + state.total.toLocaleString() + " cards · " + colorNote);
       } catch (err) {
-        if (reset) resultsEl.innerHTML = '<div class="empty">No cards matched.</div>';
-        setStatus(err.message || "Search failed", true);
+        if (reset) showEmptyResults(err.code === "not_found" ? "none" : "error", err.message);
+        setStatus(err.code === "not_found" ? "0 cards" : (err.message || "Search failed"), err.code !== "not_found");
         moreBtn.hidden = true;
       } finally {
         $("searchBtn").disabled = false;
@@ -1650,6 +1775,7 @@
     renderCmc();
     paintKwMode();
     paintIdMode();
+    themeFromColors();
     updatePreview();
     hydrateCatalogs();
   </script>
