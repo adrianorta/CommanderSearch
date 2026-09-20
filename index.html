@@ -418,6 +418,28 @@
       padding: 14px 14px 12px;
       margin-bottom: 16px;
     }
+    .builder-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      padding: 0 0 10px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .builder-toggle .builder-read { flex: 1; min-width: 0; }
+    .builder-chevron {
+      color: var(--muted);
+      font-size: 0.8rem;
+      transition: transform 0.15s ease;
+    }
+    .builder.is-collapsed .builder-chevron { transform: rotate(-90deg); }
+    .builder.is-collapsed .builder-body { display: none; }
+    .builder.is-collapsed .builder-kicker { display: none; }
     .builder-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
     .builder-kicker { font-size:0.64rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
     .builder-read { color:var(--text); font-size:0.92rem; font-weight:550; letter-spacing:-0.02em; line-height:1.35; }
@@ -662,6 +684,7 @@
           "brand brand brand brand"
           "id type cmc actions"
           "sub kw kw kw"
+          "builder builder builder builder"
           "query query query query";
         gap: 12px 16px;
         padding: 20px 28px 16px;
@@ -692,6 +715,7 @@
       .cmc-desk { display: grid; gap: 8px; }
       .sec-sub { grid-area: sub; }
       .sec-kw { grid-area: kw; }
+      .builder { grid-area: builder; margin-bottom: 0; }
       .actions {
         grid-area: actions;
         position: static;
@@ -858,6 +882,34 @@
         <div class="kw-list" id="keywords"></div>
       </section>
 
+      <div class="builder is-collapsed" id="builder">
+        <button type="button" class="builder-toggle" id="builderToggle" aria-expanded="false" aria-controls="builderBody">
+          <span class="builder-kicker">Combine</span>
+          <span class="builder-read" id="builderRead"><span class="mute">Join types and roles with AND, OR, or NOT. Open to build a custom match.</span></span>
+          <span class="builder-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="builder-body" id="builderBody">
+        <div class="builder-board">
+        <div class="builder-bar">
+          <div class="builder-title">Parts</div>
+        </div>
+        <div class="parts" id="parts"></div>
+        <div class="builder-bar">
+          <div class="builder-title">Expression</div>
+          <div class="builder-actions">
+            <button type="button" id="addAndBtn">AND</button>
+            <button type="button" id="addOrBtn">OR</button>
+            <button type="button" id="addGroupBtn">( )</button>
+            <button type="button" id="addNotBtn">NOT</button>
+          </div>
+        </div>
+        <div class="workspace" id="workspace"></div>
+        </div>
+        <div class="builder-scry" id="builderScry"></div>
+        <div class="builder-hint" id="builderHint"></div>
+        </div>
+      </div>
+
       <div class="actions">
         <div class="view-opts">
           <select id="sort" aria-label="Sort">
@@ -882,30 +934,6 @@
     <main class="stage">
       <div class="topbar">
         <div class="status" id="status">Set filters, then search.</div>
-      </div>
-      <div class="builder" id="builder">
-        <div class="builder-head">
-          <div class="builder-kicker">Scryfall match</div>
-          <div class="builder-read" id="builderRead"><span class="mute">No extra match yet — identity and mana still apply.</span></div>
-        </div>
-        <div class="builder-board">
-        <div class="builder-bar">
-          <div class="builder-title">Parts</div>
-        </div>
-        <div class="parts" id="parts"></div>
-        <div class="builder-bar">
-          <div class="builder-title">Expression</div>
-          <div class="builder-actions">
-            <button type="button" id="addAndBtn">AND</button>
-            <button type="button" id="addOrBtn">OR</button>
-            <button type="button" id="addGroupBtn">( )</button>
-            <button type="button" id="addNotBtn">NOT</button>
-          </div>
-        </div>
-        <div class="workspace" id="workspace"></div>
-        </div>
-        <div class="builder-scry" id="builderScry"></div>
-        <div class="builder-hint" id="builderHint"></div>
       </div>
       <div class="results" id="results"></div>
       <div class="more-wrap">
@@ -1170,6 +1198,7 @@
       parts: [],
       tree: { id: "root", kind: "group", op: null, not: false, children: [] },
       focusId: "root",
+      builderOpen: false,
     };
     let treeSeq = 1;
     function nextTreeId() { return "n" + (treeSeq++); }
@@ -1301,6 +1330,7 @@
       let inner;
       if (node.op === "or") inner = "(" + parts.join(" or ") + ")";
       else if (node.op === "and") inner = parts.join(" ");
+      else if (node.id === "root") inner = state.kwMode === "or" ? "(" + parts.join(" or ") + ")" : parts.join(" ");
       else inner = "";
       if (!inner) return "";
       return node.not ? negateTerm(inner) : inner;
@@ -1318,6 +1348,28 @@
       return node.not ? "not " + inner : inner;
     }
     function treeClause() { return compileNode(state.tree); }
+
+    function expressionIsSetup() {
+      return state.tree.children.length > 0;
+    }
+
+    function partsClause() {
+      const qs = state.parts.map((p) => String(p.query || "").trim()).filter(Boolean);
+      if (!qs.length) return "";
+      if (qs.length === 1) return qs[0];
+      return state.kwMode === "or" ? "(" + qs.join(" or ") + ")" : qs.join(" ");
+    }
+
+    function matchClause() {
+      return expressionIsSetup() ? treeClause() : partsClause();
+    }
+
+    function partsEnglish() {
+      const labels = state.parts.map((p) => p.label).filter(Boolean);
+      if (!labels.length) return "";
+      if (labels.length === 1) return labels[0];
+      return labels.join(state.kwMode === "or" ? " or " : " and ");
+    }
 
     function subtypeClause() {
       const raw = ($("subtypeQuery")?.value || "").trim();
@@ -1353,7 +1405,7 @@
       if (subtypes) parts.push(subtypes);
       const cmc = cmcClause();
       if (cmc) parts.push(cmc);
-      const match = treeClause();
+      const match = matchClause();
       if (match) parts.push(match);
       return parts.join(" ");
     }
@@ -1977,14 +2029,24 @@
           space.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
         });
       }
-      const clause = treeClause();
+      const clause = matchClause();
       if (read) {
         read.innerHTML = "";
-        const plain = englishNode(state.tree);
+        const plain = expressionIsSetup() ? englishNode(state.tree) : partsEnglish();
         if (!plain) {
           const s = document.createElement("span"); s.className = "mute";
-          s.textContent = "No extra match yet — identity and mana still apply.";
+          s.textContent = state.builderOpen
+            ? "Drag types and roles in, then drop AND, OR, ( ), or NOT between them. Until then, All / Any joins your picks."
+            : "All / Any joins picked types and roles. Open to build AND / OR / NOT.";
           read.appendChild(s);
+        } else if (!expressionIsSetup()) {
+          plain.split(/(\bor\b|\band\b|\bnot\b|·|\(|\))/).forEach((bit) => {
+            const span = document.createElement("span");
+            if (bit === "or") span.className = "or";
+            else if (bit === "not") span.className = "not";
+            else if (bit === "and" || bit === "·" || bit === "(" || bit === ")") span.className = "mute";
+            span.textContent = bit; read.appendChild(span);
+          });
         } else {
           plain.split(/(\bor\b|\band\b|\bnot\b|·|\(|\))/).forEach((bit) => {
             const span = document.createElement("span");
@@ -1996,8 +2058,7 @@
         }
       }
       if (scry) {
-        const pending = state.tree.children.length > 1 && !state.tree.op;
-        scry.textContent = pending ? "Drop AND or OR to join the root clauses." : (clause || "—");
+        scry.textContent = clause || "—";
       }
       const box = focusedContainer();
       const andBtn = $("addAndBtn"); const orBtn = $("addOrBtn"); const notBtn = $("addNotBtn");
@@ -2110,6 +2171,17 @@
       state.idMode = bit.dataset.pick;
       paintIdMode();
       updatePreview();
+    });
+    function paintBuilderOpen() {
+      const el = $("builder");
+      const btn = $("builderToggle");
+      if (!el || !btn) return;
+      el.classList.toggle("is-collapsed", !state.builderOpen);
+      btn.setAttribute("aria-expanded", state.builderOpen ? "true" : "false");
+    }
+    $("builderToggle").addEventListener("click", () => {
+      state.builderOpen = !state.builderOpen;
+      paintBuilderOpen();
     });
     $("kwMode").addEventListener("click", (e) => {
       const bit = e.target.closest("[data-kw-mode]");
@@ -2304,10 +2376,10 @@
       if (kind === "none") {
         title.textContent = "Nothing in that slice";
         const tips = [];
-        if (state.tree.op === "and" && state.tree.children.length > 1) {
-          tips.push("Root is AND — every clause must match. Drop or, or group alternatives.");
-        } else if (state.tree.children.length > 1 && !state.tree.op) {
-          tips.push("Root has no join yet. Drop AND or OR onto the canvas.");
+        if (!expressionIsSetup() && state.kwMode === "and" && state.parts.length > 1) {
+          tips.push("All means a card must have every picked type and role. Flip to Any.");
+        } else if (state.tree.op === "and" && state.tree.children.length > 1) {
+          tips.push("The expression is AND — every clause must match. Use OR or group alternatives.");
         }
         if (state.idMode === "exact") {
           tips.push("Exact is only that color pair. Try Within or Identity.");
@@ -2458,6 +2530,7 @@
     renderCmc();
     paintKwMode();
     paintIdMode();
+    paintBuilderOpen();
     themeFromColors();
     updatePreview();
     hydrateCatalogs();
