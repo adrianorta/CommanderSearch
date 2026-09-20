@@ -73,7 +73,7 @@
       padding: 12px 0;
       border-top: 1px solid var(--line);
     }
-    .sec:first-of-type { border-top: 0; padding-top: 0; }
+    .sec:first-of-type { border-top: 0; }
 
     label.field {
       display: block;
@@ -265,8 +265,8 @@
       font-size: 0.78rem;
     }
     button.primary {
-      background: color-mix(in srgb, var(--accent) 55%, #1b212b);
-      border-color: color-mix(in srgb, var(--accent) 70%, #3b6fc0);
+      background: color-mix(in srgb, var(--accent) 35%, #2f3540);
+      border-color: color-mix(in srgb, var(--accent) 45%, #5a6270);
       color: #fff;
       width: 100%;
       border-radius: 8px;
@@ -464,6 +464,12 @@
       line-height: 1.45;
     }
     .more-wrap { display: flex; justify-content: center; margin-top: 20px; }
+    .credit {
+      margin: 28px 0 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
 
     .kw-sheet {
       position: fixed;
@@ -565,19 +571,35 @@
         border-right: 0;
         border-bottom: 1px solid var(--line);
         display: grid;
-        grid-template-columns: minmax(200px, 0.9fr) minmax(260px, 1.2fr) minmax(240px, 1fr) 168px;
+        grid-template-columns: minmax(280px, 320px) minmax(280px, 1fr) minmax(260px, 340px) 240px;
         grid-template-areas:
-          "brand brand brand actions"
+          "brand brand brand brand"
           "id type cmc actions"
-          "sub kw kw query";
-        gap: 18px 24px;
-        padding: 20px 28px 18px;
-        align-items: start;
+          "sub kw kw kw"
+          "query query query query";
+        gap: 12px 16px;
+        padding: 20px 28px 16px;
+        align-items: stretch;
       }
-      .brand { grid-area: brand; margin: 0; }
+      .brand {
+        grid-area: brand;
+        margin: 0;
+        justify-content: flex-start;
+        align-items: baseline;
+        gap: 10px;
+        padding-bottom: 4px;
+      }
       h1 { font-size: 1.22rem; }
-      .sec { border-top: 0; padding: 0; }
+      .sec,
+      .sec:first-of-type {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--raised);
+        min-width: 0;
+        padding: 12px 14px;
+      }
       .sec-id { grid-area: id; }
+      .sec-id .row { flex-wrap: nowrap; }
       .sec-type { grid-area: type; }
       .sec-cmc { grid-area: cmc; }
       .cmc-slider { display: none; }
@@ -588,18 +610,23 @@
         grid-area: actions;
         position: static;
         margin: 0;
-        padding: 0;
-        background: none;
+        padding: 12px 14px;
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 12px;
         align-self: stretch;
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 8px;
       }
+      .actions .primary { margin-top: auto; }
+      .actions .view-opts { grid-template-columns: 1fr; }
       .query {
         grid-area: query;
         margin: 0;
-        align-self: end;
+        padding: 0 4px;
+        align-self: center;
         font-size: 0.72rem;
       }
       .kw-panel { margin-top: 8px; }
@@ -619,7 +646,7 @@
       .meta { padding: 10px 11px 12px; }
       .name { font-size: 0.88rem; }
       .type { font-size: 0.74rem; }
-      .empty { padding: 18vh 12px; font-size: 1rem; }
+      .empty { padding: 48px 12px; font-size: 1rem; }
       .more-wrap button {
         min-width: 180px;
         border-radius: 10px;
@@ -629,9 +656,9 @@
 
     @media (min-width: 1400px) {
       .rail {
-        grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.1fr) minmax(280px, 1fr) 180px;
+        grid-template-columns: minmax(280px, 320px) minmax(360px, 1fr) minmax(300px, 380px) 260px;
         padding: 24px 40px 20px;
-        gap: 20px 32px;
+        gap: 14px 18px;
       }
       .stage { padding: 28px 40px 80px; }
       .results {
@@ -664,8 +691,7 @@
   <div class="app">
     <aside class="rail">
       <div class="brand">
-        <h1>Commander filter</h1>
-        <span>Scryfall</span>
+        <h1>Commander Filter</h1>
       </div>
 
       <section class="sec sec-id">
@@ -767,12 +793,11 @@
       <div class="topbar">
         <div class="status" id="status">Set filters, then search.</div>
       </div>
-      <div class="results" id="results">
-        <div class="empty">Set filters above, then search.</div>
-      </div>
+      <div class="results" id="results"></div>
       <div class="more-wrap">
         <button id="moreBtn" hidden>Load more</button>
       </div>
+      <p class="credit">Powered by Scryfall</p>
     </main>
   </div>
 
