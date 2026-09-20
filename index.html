@@ -994,7 +994,10 @@
 
     function kwQuery(name) {
       const key = String(name).toLowerCase();
-      return /[\s\-!]/.test(key) ? 'kw:"' + key + '"' : "kw:" + key;
+      const quoted = /[\s\-!]/.test(key);
+      const kw = quoted ? 'kw:"' + key + '"' : "kw:" + key;
+      const oracle = quoted ? 'o:"' + key + '"' : "o:" + key;
+      return "(" + kw + " or " + oracle + ")";
     }
 
     const KEYWORD_CATEGORY = {};
@@ -1732,15 +1735,18 @@
     }
 
     function kwQuery(name) {
-      const key = name.toLowerCase();
-      return /[\s\-!]/.test(key) ? 'kw:"' + key + '"' : "kw:" + key;
+      const key = String(name).toLowerCase();
+      const quoted = /[\s\-!]/.test(key);
+      const kw = quoted ? 'kw:"' + key + '"' : "kw:" + key;
+      const oracle = quoted ? 'o:"' + key + '"' : "o:" + key;
+      return "(" + kw + " or " + oracle + ")";
     }
 
     function usedKeywordNames() {
       const used = new Set();
       KEYWORD_GROUPS.forEach((group) => {
         group.items.forEach(([, q]) => {
-          const m = String(q).match(/^kw:"?([^"]+)"?$/i);
+          const m = String(q).match(/kw:"?([^" )]+)"?/i);
           if (m) used.add(m[1].toLowerCase());
         });
       });
