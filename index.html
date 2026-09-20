@@ -457,7 +457,8 @@
       border-radius:6px; color:#6f7b8c; background:#0b0e13;
     }
     .expr-empty { color:var(--muted); font-size:0.8rem; padding:4px 2px; }
-    .builder, .parts, .workspace, .leaf, .box, .builder-actions button {
+    .builder-board, .builder-board .parts, .builder-board .workspace,
+    .builder-board .leaf, .builder-board .box, .builder-board .builder-actions button {
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
@@ -887,11 +888,9 @@
           <div class="builder-kicker">Scryfall match</div>
           <div class="builder-read" id="builderRead"><span class="mute">No extra match yet — identity and mana still apply.</span></div>
         </div>
+        <div class="builder-board">
         <div class="builder-bar">
           <div class="builder-title">Parts</div>
-          <div class="builder-actions">
-            <button type="button" id="placeAllBtn">Place all</button>
-          </div>
         </div>
         <div class="parts" id="parts"></div>
         <div class="builder-bar">
@@ -904,6 +903,7 @@
           </div>
         </div>
         <div class="workspace" id="workspace"></div>
+        </div>
         <div class="builder-scry" id="builderScry"></div>
         <div class="builder-hint" id="builderHint"></div>
       </div>
@@ -1643,14 +1643,7 @@
       focus.not = !focus.not;
       updatePreview();
     }
-    function placeAllParts() {
-      const box = focusedContainer();
-      state.parts.forEach((part) => {
-        box.children.push({ id: nextTreeId(), kind: "leaf", label: part.label, query: part.query, source: part.source, not: false });
-      });
-      renderKeywords();
-      updatePreview();
-    }
+    
     function removeFocused() {
       const node = findNode(state.focusId);
       if (!node || node.id === "root") return;
@@ -2012,7 +2005,6 @@
       if (orBtn) orBtn.classList.toggle("on", box.op === "or");
       const focus = findNode(state.focusId);
       if (notBtn) notBtn.classList.toggle("on", !!(focus && focus.not));
-      if ($("placeAllBtn")) $("placeAllBtn").disabled = !state.parts.length;
       if (hint) {
         hint.textContent = builderDrag.carry
           ? "Carrying " + (builderDrag.carry.label || "item") + " — tap the canvas or a group to place it."
@@ -2143,7 +2135,6 @@
       if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
       toggleNegate();
     });
-    $("placeAllBtn").addEventListener("click", placeAllParts);
     bindBuilderDrag($("addAndBtn"), { kind: "expr", expr: "and", label: "AND" });
     bindBuilderDrag($("addOrBtn"), { kind: "expr", expr: "or", label: "OR" });
     bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "( )" });
