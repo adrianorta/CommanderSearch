@@ -105,7 +105,7 @@
       font-size: 0.88rem;
       outline: none;
     }
-    input[type="text"]:focus, select:focus { border-color: #4d6d9a; }
+    input[type="text"]:focus, select:focus { border-color: var(--accent); }
 
     .mode-toggle {
       display: grid;
@@ -138,12 +138,13 @@
     }
     .mode-toggle.is-any::before { transform: translateX(100%); }
     .mode-toggle.thirds {
-      width: 186px;
-      grid-template-columns: 1fr 1fr 1fr;
+      width: 248px;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
     }
-    .mode-toggle.thirds::before { width: calc(33.333% - 2px); }
-    .mode-toggle.thirds[data-mode="exact"]::before { transform: translateX(100%); }
-    .mode-toggle.thirds[data-mode="color"]::before { transform: translateX(200%); }
+    .mode-toggle.thirds::before { width: calc(25% - 2px); }
+    .mode-toggle.thirds[data-mode="identity"]::before { transform: translateX(100%); }
+    .mode-toggle.thirds[data-mode="inside"]::before { transform: translateX(200%); }
+    .mode-toggle.thirds[data-mode="exact"]::before { transform: translateX(300%); }
     .mode-toggle span {
       position: relative;
       z-index: 1;
@@ -152,9 +153,10 @@
     }
     .mode-toggle[data-mode="and"] span:first-child,
     .mode-toggle[data-mode="or"] span:last-child,
-    .mode-toggle[data-mode="within"] span:first-child,
-    .mode-toggle[data-mode="exact"] span:nth-child(2),
-    .mode-toggle[data-mode="color"] span:last-child {
+    .mode-toggle[data-mode="having"] span:first-child,
+    .mode-toggle[data-mode="identity"] span:nth-child(2),
+    .mode-toggle[data-mode="inside"] span:nth-child(3),
+    .mode-toggle[data-mode="exact"] span:last-child {
       color: #dce9ff;
     }
 
@@ -183,7 +185,7 @@
       touch-action: none;
       user-select: none;
     }
-    .cmc-pad.held { border-color: #4d73a8; }
+    .cmc-pad.held { border-color: var(--accent); }
     .cmc-rail {
       position: absolute;
       left: 14px;
@@ -670,20 +672,23 @@
     @media (hover: hover) and (min-width: 901px) {
       .chip:hover,
       .kw-pad:hover,
-      .mana:hover {
-        border-color: #4d73a8;
+      .mana:hover,
+      .mode-toggle:hover,
+      .card:hover {
+        border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
       }
-      .kw-pad:hover { background: #243044; }
+      .kw-pad:hover,
+      .chip:hover {
+        background: var(--accent-soft);
+      }
       .card {
         transition: transform 0.16s ease, border-color 0.16s ease;
       }
-      .card:hover {
-        transform: translateY(-4px);
-        border-color: #4d73a8;
+      .card:hover { transform: translateY(-4px); }
+      button.primary:hover {
+        background: color-mix(in srgb, var(--accent) 50%, #2f3540);
       }
-      button.primary:hover { background: #3669b4; }
       button.ghost:hover { background: var(--raised); }
-      .mode-toggle:hover { border-color: #4d73a8; }
     }
   </style>
 </head>
@@ -697,10 +702,11 @@
       <section class="sec sec-id">
         <div class="field-row">
           <label class="field">Identity</label>
-          <button type="button" class="mode-toggle thirds" id="idMode" data-mode="exact" aria-label="Color filter mode">
-            <span data-pick="within">Having</span>
-            <span data-pick="exact">Identity</span>
-            <span data-pick="color">Exact</span>
+          <button type="button" class="mode-toggle thirds" id="idMode" data-mode="identity" aria-label="Color filter mode">
+            <span data-pick="having">Having</span>
+            <span data-pick="identity">Identity</span>
+            <span data-pick="inside">Within</span>
+            <span data-pick="exact">Exact</span>
           </button>
         </div>
         <div class="row" id="colors">
@@ -1049,7 +1055,7 @@
       keywords: new Set(),
       kwOpen: null,
       kwMode: "and",
-      idMode: "exact",
+      idMode: "identity",
       cmcMin: 0,
       cmcMax: 15,
       next: null,
@@ -1109,13 +1115,15 @@
       const colorless = state.colors.has("C");
       if (!colors.length && !colorless) return "";
       if (!colors.length && colorless) {
-        if (state.idMode === "color") return "c=c";
-        if (state.idMode === "exact") return "id<=c";
+        if (state.idMode === "exact") return "c=c";
+        if (state.idMode === "identity") return "id<=c";
+        if (state.idMode === "inside") return "c=c";
         return "c>=c";
       }
       const code = colors.join("").toLowerCase();
-      if (state.idMode === "color") return "c=" + code;
-      if (state.idMode === "exact") return "id<=" + code;
+      if (state.idMode === "exact") return "c=" + code;
+      if (state.idMode === "identity") return "id<=" + code;
+      if (state.idMode === "inside") return "c<=" + code + " -c:c";
       return "c>=" + code;
     }
 
@@ -1263,7 +1271,9 @@
         const c = btn.dataset.c;
         if (state.colors.has(c)) state.colors.delete(c);
         else state.colors.add(c);
-        if (state.colors.has("C") && selectedColors().length) {
+        if (c === "C" && state.colors.has("C")) {
+          selectedColors().forEach((x) => state.colors.delete(x));
+        } else if (c !== "C" && state.colors.has("C") && selectedColors().length) {
           state.colors.delete("C");
         }
         document.querySelectorAll("#colors .mana").forEach((b) => {
@@ -1597,7 +1607,7 @@
       state.keywords.clear();
       state.kwOpen = null;
       state.kwMode = "and";
-      state.idMode = "exact";
+      state.idMode = "identity";
       paintKwMode();
       paintIdMode();
       renderKeywords();
@@ -1659,10 +1669,12 @@
         if (state.kwMode === "and" && state.keywords.size > 1) {
           tips.push("All means a card must have every selected role. Flip to Any.");
         }
-        if (state.idMode === "color") {
-          tips.push("Exact is only those colors and no others. Try Having or Identity.");
-        } else if (state.idMode === "exact") {
-          tips.push("Identity only allows those colors. Try Having if you want extra colors.");
+        if (state.idMode === "exact") {
+          tips.push("Exact is only that color pair. Try Within or Identity.");
+        } else if (state.idMode === "inside") {
+          tips.push("Within is only those colors, no colorless. Try Identity to include artifacts.");
+        } else if (state.idMode === "identity") {
+          tips.push("Identity is the Commander deck. Try Having if you want extra colors.");
         }
         if (!cmcIsAny()) tips.push("Widen the mana range.");
         if (!tips.length) tips.push("Drop a type or role, or widen colors, then search again.");
