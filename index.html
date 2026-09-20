@@ -408,7 +408,10 @@
       color: #7f8b9c;
       line-height: 1.35;
       word-break: break-word;
+      cursor: pointer;
     }
+    .query:hover { color: #c5d0dc; }
+    .query.copied { color: var(--accent); }
 
 
     .builder {
@@ -884,7 +887,6 @@
 
       <div class="builder is-collapsed" id="builder">
         <button type="button" class="builder-toggle" id="builderToggle" aria-expanded="false" aria-controls="builderBody">
-          <span class="builder-kicker">Combine</span>
           <span class="builder-read" id="builderRead"><span class="mute">Join types and roles with AND, OR, or NOT. Open to build a custom match.</span></span>
           <span class="builder-chevron" aria-hidden="true">▾</span>
         </button>
@@ -905,7 +907,6 @@
         </div>
         <div class="workspace" id="workspace"></div>
         </div>
-        <div class="builder-scry" id="builderScry"></div>
         <div class="builder-hint" id="builderHint"></div>
         </div>
       </div>
@@ -928,7 +929,7 @@
         <button id="searchBtn" class="primary">Search</button>
         <button id="clearBtn" class="ghost">Reset</button>
       </div>
-      <div class="query" id="queryPreview">f:commander game:paper</div>
+      <div class="query" id="queryPreview" title="Click to copy">f:commander game:paper</div>
     </aside>
 
     <main class="stage">
@@ -1208,6 +1209,29 @@
     const resultsEl = $("results");
     const moreBtn = $("moreBtn");
     const queryPreview = $("queryPreview");
+    queryPreview.addEventListener("click", async () => {
+      const q = buildQuery();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(q);
+        else {
+          const ta = document.createElement("textarea");
+          ta.value = q;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+        queryPreview.classList.add("copied");
+        queryPreview.textContent = "Copied";
+        setTimeout(() => {
+          queryPreview.classList.remove("copied");
+          queryPreview.textContent = buildQuery();
+        }, 900);
+      } catch (_) {}
+    });
 
     function selectedColors() {
       return COLORS.filter((c) => state.colors.has(c));
@@ -1923,7 +1947,6 @@
       const space = $("workspace");
       const hint = $("builderHint");
       const read = $("builderRead");
-      const scry = $("builderScry");
       if (!partsEl || !space) return;
       partsEl.innerHTML = "";
       space.innerHTML = "";
@@ -2029,7 +2052,6 @@
           space.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
         });
       }
-      const clause = matchClause();
       if (read) {
         read.innerHTML = "";
         const plain = expressionIsSetup() ? englishNode(state.tree) : partsEnglish();
@@ -2056,9 +2078,6 @@
             span.textContent = bit; read.appendChild(span);
           });
         }
-      }
-      if (scry) {
-        scry.textContent = clause || "—";
       }
       const box = focusedContainer();
       const andBtn = $("addAndBtn"); const orBtn = $("addOrBtn"); const notBtn = $("addNotBtn");
