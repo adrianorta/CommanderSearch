@@ -410,6 +410,76 @@
       word-break: break-word;
     }
 
+
+    .builder {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, #14181f), #10141b 42%);
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      margin-bottom: 16px;
+    }
+    .builder-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+    .builder-kicker { font-size:0.64rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+    .builder-read { color:var(--text); font-size:0.92rem; font-weight:550; letter-spacing:-0.02em; line-height:1.35; }
+    .builder-read span.mute { color:var(--muted); font-weight:450; }
+    .builder-read span.or { color:#e7c37a; }
+    .builder-read span.not { color:#ffb3b3; }
+    .builder-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:10px 0 8px; }
+    .builder-title { font-size:0.64rem; font-weight:650; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
+    .builder-actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .builder-actions button { border-radius:10px; padding:6px 10px; font-size:0.72rem; font-weight:700; }
+    .builder-actions button.on { border-color:var(--accent); background:var(--accent-soft); color:#dce9ff; }
+    .builder-actions button.warn { border-color:color-mix(in srgb, var(--danger) 55%, var(--line)); color:#ffd0d0; }
+    .builder-actions button:disabled { opacity:0.38; }
+    .parts { display:flex; flex-wrap:wrap; gap:6px; min-height:42px; padding:4px; border-radius:10px; }
+    .workspace {
+      display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+      min-height:88px; padding:12px; border-radius:14px;
+      border:1px solid var(--line); background:#0b0e13;
+    }
+    .workspace.focused { border-color:color-mix(in srgb, var(--accent) 55%, var(--line)); }
+    .box {
+      display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px;
+      padding:7px 8px 7px 6px; border-radius:12px; min-height:42px; cursor:pointer;
+      border:1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+      background:color-mix(in srgb, var(--accent) 8%, #151b24);
+    }
+    .box.or-box { border-color:color-mix(in srgb, #d4a24c 55%, var(--line)); background:color-mix(in srgb, #d4a24c 9%, #151b24); }
+    .box.not-box { border-color:color-mix(in srgb, var(--danger) 60%, var(--line)); background:color-mix(in srgb, var(--danger) 9%, #151b24); }
+    .box.focused { box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .paren { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:1.15rem; font-weight:650; color:#6f7b8c; line-height:1; padding:0 2px; }
+    .not-box .paren { color:#ef9a9a; }
+    .or-box .paren { color:#c9a45d; }
+    .join { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.68rem; font-weight:700; color:#8aa4c4; }
+    .join.or { color:#e7c37a; }
+    .join.need {
+      min-width:22px; min-height:18px; border:1px dashed color-mix(in srgb, var(--accent) 40%, var(--line));
+      border-radius:6px; color:#6f7b8c; background:#0b0e13;
+    }
+    .expr-empty { color:var(--muted); font-size:0.8rem; padding:4px 2px; }
+    .leaf {
+      display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
+      background:var(--raised); color:var(--text); border-radius:999px;
+      padding:6px 8px 6px 10px; font:inherit; font-size:0.78rem; cursor:grab;
+    }
+    .leaf.on { background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 75%, #fff); color:#f4f8ff; }
+    .leaf.not { background:color-mix(in srgb, var(--danger) 16%, var(--raised)); border-color:color-mix(in srgb, var(--danger) 75%, #fff); color:#ffd0d0; }
+    .leaf.picked { box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent); }
+    .leaf.type { border-radius:8px; }
+    .leaf .mini { width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--muted); font-size:0.85rem; display:grid; place-items:center; }
+    .builder-scry { margin-top:8px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.7rem; color:#7f8b9c; line-height:1.4; word-break:break-word; }
+    .builder-hint { color:var(--muted); font-size:0.72rem; margin-top:6px; line-height:1.4; }
+    .drag-ghost {
+      position:fixed; z-index:80; pointer-events:none; padding:6px 10px; border-radius:999px;
+      background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 80%, #fff);
+      color:#f4f8ff; font-size:0.78rem; font-weight:650; box-shadow:0 10px 30px #0008;
+      transform:translate(-20px,-16px);
+    }
+    .is-dragging { opacity:0.35; }
+    .drop-on { outline:2px solid color-mix(in srgb, var(--accent) 75%, #fff); outline-offset:2px; }
+    .parts.drop-on { background:color-mix(in srgb, var(--accent) 8%, transparent); }
+    .drop-slot { width:4px; align-self:stretch; min-height:24px; border-radius:99px; background:var(--accent); }
+
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -799,6 +869,31 @@
       <div class="topbar">
         <div class="status" id="status">Set filters, then search.</div>
       </div>
+      <div class="builder" id="builder">
+        <div class="builder-head">
+          <div class="builder-kicker">Scryfall match</div>
+          <div class="builder-read" id="builderRead"><span class="mute">No extra match yet — identity and mana still apply.</span></div>
+        </div>
+        <div class="builder-bar">
+          <div class="builder-title">Parts</div>
+          <div class="builder-actions">
+            <button type="button" id="placeAllBtn">Place all</button>
+          </div>
+        </div>
+        <div class="parts" id="parts"></div>
+        <div class="builder-bar">
+          <div class="builder-title">Expression</div>
+          <div class="builder-actions">
+            <button type="button" id="addAndBtn">AND</button>
+            <button type="button" id="addOrBtn">OR</button>
+            <button type="button" id="addGroupBtn">( )</button>
+            <button type="button" id="addNotBtn">NOT</button>
+          </div>
+        </div>
+        <div class="workspace" id="workspace"></div>
+        <div class="builder-scry" id="builderScry"></div>
+        <div class="builder-hint" id="builderHint"></div>
+      </div>
       <div class="results" id="results"></div>
       <div class="more-wrap">
         <button id="moreBtn" hidden>Load more</button>
@@ -1051,8 +1146,6 @@
 
     const state = {
       colors: new Set(),
-      types: {},
-      keywords: new Set(),
       kwOpen: null,
       kwMode: "and",
       idMode: "identity",
@@ -1061,7 +1154,12 @@
       next: null,
       total: 0,
       shown: 0,
+      parts: [],
+      tree: { id: "root", kind: "group", op: null, not: false, children: [] },
+      focusId: "root",
     };
+    let treeSeq = 1;
+    function nextTreeId() { return "n" + (treeSeq++); }
 
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
@@ -1127,20 +1225,86 @@
       return "c>=" + code;
     }
 
-    function tagClause(map) {
-      const included = Object.keys(map).filter((t) => map[t] === "in");
-      const excluded = Object.keys(map).filter((t) => map[t] === "out");
-      const parts = [];
-      const fmt = (t) => (t.includes(" ") ? 't:"' + t + '"' : "t:" + t);
-      if (included.length === 1) parts.push(fmt(included[0]));
-      else if (included.length > 1) parts.push("(" + included.map(fmt).join(" or ") + ")");
-      excluded.forEach((t) => parts.push("-" + fmt(t)));
-      return parts.join(" ");
-    }
 
-    function typeClause() {
-      return tagClause(state.types);
+    function typeQuery(t) {
+      return String(t).includes(" ") ? 't:"' + t + '"' : "t:" + t;
     }
+    function walkTree(node, fn, parent) {
+      fn(node, parent);
+      if (node.kind === "group") node.children.forEach((ch) => walkTree(ch, fn, node));
+    }
+    function treeLeaves() {
+      const out = [];
+      walkTree(state.tree, (n) => { if (n.kind === "leaf") out.push(n); });
+      return out;
+    }
+    function findLeafByQuery(query) {
+      return treeLeaves().find((n) => n.query === query) || null;
+    }
+    function findNode(id, node) {
+      const root = node || state.tree;
+      if (root.id === id) return root;
+      if (root.kind !== "group") return null;
+      for (const ch of root.children) {
+        const hit = findNode(id, ch);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    function parentOf(id, node) {
+      const root = node || state.tree;
+      if (root.kind !== "group") return null;
+      if (root.children.some((ch) => ch.id === id)) return root;
+      for (const ch of root.children) {
+        const hit = parentOf(id, ch);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    function isSimpleTerm(q) {
+      const s = String(q || "").trim();
+      return /^[a-z]+:[^\s()]+$/i.test(s) || /^[a-z]+:"[^"]+"$/i.test(s);
+    }
+    function negateTerm(q) {
+      const s = String(q || "").trim();
+      if (!s) return "";
+      if (s.startsWith("-")) return s;
+      if (s.startsWith("(") || !isSimpleTerm(s)) return s.startsWith("(") ? "-" + s : "-(" + s + ")";
+      return "-" + s;
+    }
+    function compileNode(node) {
+      if (!node) return "";
+      if (node.kind === "leaf") {
+        const q = String(node.query || "").trim();
+        if (!q) return "";
+        return node.not ? negateTerm(q) : q;
+      }
+      const parts = (node.children || []).map(compileNode).filter(Boolean);
+      if (!parts.length) return "";
+      if (parts.length === 1) {
+        const inner = parts[0];
+        return node.not ? negateTerm(inner) : inner;
+      }
+      let inner;
+      if (node.op === "or") inner = "(" + parts.join(" or ") + ")";
+      else if (node.op === "and") inner = parts.join(" ");
+      else inner = "";
+      if (!inner) return "";
+      return node.not ? negateTerm(inner) : inner;
+    }
+    function englishNode(node) {
+      if (!node) return "";
+      if (node.kind === "leaf") return (node.not ? "not " : "") + node.label;
+      const bits = (node.children || []).map(englishNode).filter(Boolean);
+      if (!bits.length) return "";
+      if (bits.length === 1) return node.not ? "not " + bits[0] : bits[0];
+      if (!node.op) return node.not ? "not (" + bits.join(" · ") + ")" : bits.join(" · ");
+      const join = node.op === "or" ? " or " : " and ";
+      let inner = bits.join(join);
+      if (node.id !== "root") inner = "(" + inner + ")";
+      return node.not ? "not " + inner : inner;
+    }
+    function treeClause() { return compileNode(state.tree); }
 
     function subtypeClause() {
       const raw = ($("subtypeQuery")?.value || "").trim();
@@ -1172,18 +1336,12 @@
       const parts = ["f:commander", "game:paper"];
       const identity = identityClause();
       if (identity) parts.push(identity);
-      const types = typeClause();
-      if (types) parts.push(types);
       const subtypes = subtypeClause();
       if (subtypes) parts.push(subtypes);
       const cmc = cmcClause();
       if (cmc) parts.push(cmc);
-      const kws = [...state.keywords];
-      if (kws.length) {
-        const joiner = state.kwMode === "or" ? " or " : " ";
-        const clause = kws.join(joiner);
-        parts.push(kws.length > 1 && state.kwMode === "or" ? "(" + clause + ")" : clause);
-      }
+      const match = treeClause();
+      if (match) parts.push(match);
       return parts.join(" ");
     }
 
@@ -1264,6 +1422,8 @@
 
     function updatePreview() {
       queryPreview.textContent = buildQuery();
+      renderBuilder();
+      paintTypePalette();
     }
 
     document.querySelectorAll("#colors .mana").forEach((btn) => {
@@ -1285,33 +1445,36 @@
       });
     });
 
-    document.querySelectorAll("#types .chip").forEach((btn) => bindTagChip(btn, state.types));
-
-    function paintTagChip(btn, map) {
-      const t = btn.dataset.t;
-      const base = btn.dataset.label;
-      const mode = map[t];
-      btn.textContent = mode === "out" ? "−" + base : base;
-      btn.classList.toggle("on", mode === "in");
-      btn.classList.toggle("exclude", mode === "out");
-      btn.setAttribute("aria-pressed", mode ? "true" : "false");
-    }
-
-    function bindTagChip(btn, map) {
+    document.querySelectorAll("#types .chip").forEach((btn) => {
       btn.dataset.label = btn.dataset.label || btn.textContent;
       btn.addEventListener("click", () => {
-        const t = btn.dataset.t;
-        const cur = map[t];
-        if (!cur) map[t] = "in";
-        else if (cur === "in") map[t] = "out";
-        else delete map[t];
-        paintTagChip(btn, map);
-        updatePreview();
+        togglePaletteLeaf({ label: btn.dataset.label, query: typeQuery(btn.dataset.t), source: "type" });
+      });
+    });
+
+    function paintTypePalette() {
+      document.querySelectorAll("#types .chip").forEach((btn) => {
+        const query = typeQuery(btn.dataset.t);
+        const used = !!(findLeafByQuery(query) || state.parts.some((p) => p.query === query));
+        const base = btn.dataset.label || btn.textContent.replace(/^−/, "");
+        btn.textContent = base;
+        btn.classList.toggle("on", used);
+        btn.classList.toggle("exclude", false);
+        btn.setAttribute("aria-pressed", used ? "true" : "false");
       });
     }
 
+    function togglePaletteLeaf({ label, query, source }) {
+      const idx = state.parts.findIndex((p) => p.query === query);
+      if (idx >= 0) state.parts.splice(idx, 1);
+      else state.parts.push({ id: nextTreeId(), label, query, source });
+      renderKeywords();
+      updatePreview();
+    }
+
     function selectedInGroup(group) {
-      return group.items.filter(([, q]) => state.keywords.has(q)).length;
+      const queries = new Set([...state.parts.map((p) => p.query), ...treeLeaves().map((n) => n.query)]);
+      return group.items.filter(([, q]) => queries.has(q)).length;
     }
 
     function renderKeywords() {
@@ -1343,15 +1506,12 @@
         target.innerHTML = "";
         group.items.forEach(([name, query]) => {
           const btn = document.createElement("button");
-          btn.className = "chip" + (state.keywords.has(query) ? " on" : "");
+          const used = !!(findLeafByQuery(query) || state.parts.some((p) => p.query === query));
+          btn.className = "chip" + (used ? " on" : "");
           btn.type = "button";
           btn.textContent = name;
           btn.addEventListener("click", () => {
-            if (state.keywords.has(query)) state.keywords.delete(query);
-            else state.keywords.add(query);
-            btn.classList.toggle("on", state.keywords.has(query));
-            paintPads();
-            updatePreview();
+            togglePaletteLeaf({ label: name, query, source: "role" });
           });
           target.appendChild(btn);
         });
@@ -1413,6 +1573,361 @@
       showGroup(state.kwOpen);
     }
 
+
+    function focusedContainer() {
+      const node = findNode(state.focusId) || state.tree;
+      if (node.kind === "group") return node;
+      return parentOf(node.id) || state.tree;
+    }
+    function containerDepth(node) {
+      let d = 0, cur = node;
+      while (cur && cur.id !== "root") { d += 1; cur = parentOf(cur.id); }
+      return d;
+    }
+    function placePart(part, dest, index) {
+      const box = dest || focusedContainer();
+      const at = index == null ? box.children.length : Math.max(0, Math.min(index, box.children.length));
+      box.children.splice(at, 0, {
+        id: nextTreeId(), kind: "leaf", label: part.label, query: part.query, source: part.source, not: false
+      });
+      state.focusId = box.id;
+      renderKeywords();
+      updatePreview();
+    }
+    function addContainer(op, not, index) {
+      const box = focusedContainer();
+      if (containerDepth(box) >= 4) return;
+      const child = { id: nextTreeId(), kind: "group", op: op || null, not: !!not, children: [] };
+      const at = index == null ? box.children.length : Math.max(0, Math.min(index, box.children.length));
+      box.children.splice(at, 0, child);
+      state.focusId = child.id;
+      updatePreview();
+    }
+    function setJoin(op) {
+      const box = focusedContainer();
+      box.op = op;
+      if (box.id === "root") { state.kwMode = op || "and"; paintKwMode(); }
+      updatePreview();
+    }
+    function wrapParens() {
+      const focus = findNode(state.focusId) || state.tree;
+      if (focus.kind === "leaf") {
+        const parent = parentOf(focus.id);
+        if (!parent) return;
+        const idx = parent.children.findIndex((ch) => ch.id === focus.id);
+        const group = { id: nextTreeId(), kind: "group", op: null, not: false, children: [focus] };
+        parent.children.splice(idx, 1, group);
+        state.focusId = group.id;
+        updatePreview();
+        return;
+      }
+      addContainer(null, false);
+    }
+    function toggleNegate() {
+      const focus = findNode(state.focusId) || state.tree;
+      if (focus.kind === "leaf") { focus.not = !focus.not; updatePreview(); return; }
+      if (focus.id === "root") { addContainer(null, true); return; }
+      focus.not = !focus.not;
+      updatePreview();
+    }
+    function placeAllParts() {
+      const box = focusedContainer();
+      state.parts.forEach((part) => {
+        box.children.push({ id: nextTreeId(), kind: "leaf", label: part.label, query: part.query, source: part.source, not: false });
+      });
+      renderKeywords();
+      updatePreview();
+    }
+    function removeFocused() {
+      const node = findNode(state.focusId);
+      if (!node || node.id === "root") return;
+      const parent = parentOf(node.id);
+      if (!parent) return;
+      parent.children = parent.children.filter((ch) => ch.id !== node.id);
+      walkTree(node, (n) => {
+        if (n.kind !== "leaf") return;
+        if (!state.parts.some((p) => p.query === n.query)) {
+          state.parts.push({ id: nextTreeId(), label: n.label, query: n.query, source: n.source });
+        }
+      });
+      state.focusId = parent.id;
+      renderKeywords();
+      updatePreview();
+    }
+    function isDescendant(ancestor, node) {
+      if (!ancestor || !node) return false;
+      let found = false;
+      walkTree(ancestor, (n) => { if (n.id === node.id && n !== ancestor) found = true; });
+      return found;
+    }
+    function takeNode(id) {
+      const parent = parentOf(id);
+      if (!parent) return null;
+      const idx = parent.children.findIndex((ch) => ch.id === id);
+      if (idx < 0) return null;
+      return parent.children.splice(idx, 1)[0];
+    }
+    function returnLeavesToParts(node) {
+      walkTree(node, (n) => {
+        if (n.kind !== "leaf") return;
+        if (!state.parts.some((p) => p.query === n.query)) {
+          state.parts.push({ id: nextTreeId(), label: n.label, query: n.query, source: n.source });
+        }
+      });
+    }
+    function dropPayload(payload, destId, index) {
+      if (!payload) return;
+      if (destId === "parts") {
+        if (payload.kind === "part" || payload.kind === "expr") return;
+        const node = takeNode(payload.id);
+        if (node) returnLeavesToParts(node);
+        state.focusId = "root";
+        renderKeywords();
+        updatePreview();
+        return;
+      }
+      const dest = destId === "root" ? state.tree : findNode(destId);
+      if (!dest || dest.kind !== "group") return;
+      if (payload.kind === "expr") {
+        if (payload.expr === "and" || payload.expr === "or") {
+          dest.op = payload.expr;
+          if (dest.id === "root") { state.kwMode = dest.op; paintKwMode(); }
+          state.focusId = dest.id;
+          updatePreview();
+          return;
+        }
+        const child = { id: nextTreeId(), kind: "group", op: null, not: payload.expr === "not", children: [] };
+        dest.children.splice(Math.max(0, Math.min(index, dest.children.length)), 0, child);
+        state.focusId = child.id;
+        updatePreview();
+        return;
+      }
+      if (payload.kind === "part") {
+        const part = state.parts.find((p) => p.query === payload.query);
+        if (!part) return;
+        placePart(part, dest, index);
+        return;
+      }
+      const moving = findNode(payload.id);
+      if (!moving || moving.id === dest.id || isDescendant(moving, dest)) return;
+      const node = takeNode(payload.id);
+      if (!node) return;
+      dest.children.splice(Math.max(0, Math.min(index, dest.children.length)), 0, node);
+      state.focusId = dest.id;
+      updatePreview();
+    }
+    const builderDrag = { on:false, moved:false, payload:null, ghost:null, fromEl:null, slot:null, ignoreClick:false };
+    function dragCleanup() {
+      if (builderDrag.ghost) builderDrag.ghost.remove();
+      if (builderDrag.slot) builderDrag.slot.remove();
+      document.querySelectorAll(".drop-on, .is-dragging").forEach((el) => el.classList.remove("drop-on", "is-dragging"));
+      builderDrag.on = false; builderDrag.moved = false; builderDrag.payload = null;
+      builderDrag.ghost = null; builderDrag.fromEl = null; builderDrag.slot = null;
+    }
+    function dropIndexFor(container, x) {
+      const kids = [...container.querySelectorAll(":scope > [data-node-id]")];
+      for (let i = 0; i < kids.length; i++) {
+        const r = kids[i].getBoundingClientRect();
+        if (x < r.left + r.width / 2) return i;
+      }
+      return kids.length;
+    }
+    function bindBuilderDrag(el, payload) {
+      el.style.cursor = "grab";
+      el.addEventListener("pointerdown", (e) => {
+        if (e.button && e.button !== 0) return;
+        if (e.target.closest(".mini")) return;
+        builderDrag.on = true; builderDrag.moved = false; builderDrag.payload = payload;
+        builderDrag.fromEl = el; builderDrag.startX = e.clientX; builderDrag.startY = e.clientY;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      });
+    }
+    function currentDrop(x, y) {
+      const hit = document.elementsFromPoint(x, y).find((n) => n.dataset && n.dataset.drop);
+      if (!hit) return null;
+      return { el: hit, dest: hit.dataset.drop, index: hit.dataset.drop === "parts" ? 0 : dropIndexFor(hit, x) };
+    }
+    window.addEventListener("pointermove", (e) => {
+      if (!builderDrag.on || !builderDrag.payload) return;
+      if (!builderDrag.moved && Math.hypot(e.clientX - builderDrag.startX, e.clientY - builderDrag.startY) < 7) return;
+      if (!builderDrag.moved) {
+        builderDrag.moved = true;
+        if (builderDrag.fromEl) builderDrag.fromEl.classList.add("is-dragging");
+        const ghost = document.createElement("div");
+        ghost.className = "drag-ghost";
+        ghost.textContent = builderDrag.payload.label || "expr";
+        document.body.appendChild(ghost);
+        builderDrag.ghost = ghost;
+      }
+      if (builderDrag.ghost) { builderDrag.ghost.style.left = e.clientX + "px"; builderDrag.ghost.style.top = e.clientY + "px"; }
+      document.querySelectorAll(".drop-on").forEach((n) => n.classList.remove("drop-on"));
+      if (builderDrag.slot) { builderDrag.slot.remove(); builderDrag.slot = null; }
+      const drop = currentDrop(e.clientX, e.clientY);
+      if (!drop) return;
+      drop.el.classList.add("drop-on");
+      if (drop.dest !== "parts") {
+        const slot = document.createElement("span");
+        slot.className = "drop-slot";
+        const kids = [...drop.el.querySelectorAll(":scope > [data-node-id]")];
+        if (!kids.length || drop.index >= kids.length) drop.el.appendChild(slot);
+        else drop.el.insertBefore(slot, kids[drop.index]);
+        builderDrag.slot = slot;
+      }
+    });
+    window.addEventListener("pointerup", (e) => {
+      if (!builderDrag.on) return;
+      const payload = builderDrag.payload;
+      const moved = builderDrag.moved;
+      const drop = moved ? currentDrop(e.clientX, e.clientY) : null;
+      if (moved) builderDrag.ignoreClick = true;
+      dragCleanup();
+      if (moved && payload && drop) dropPayload(payload, drop.dest, drop.index);
+    });
+    window.addEventListener("pointercancel", () => { if (builderDrag.on) dragCleanup(); });
+
+    function renderBuilder() {
+      const partsEl = $("parts");
+      const space = $("workspace");
+      const hint = $("builderHint");
+      const read = $("builderRead");
+      const scry = $("builderScry");
+      if (!partsEl || !space) return;
+      partsEl.innerHTML = "";
+      space.innerHTML = "";
+      partsEl.dataset.drop = "parts";
+      if (!state.parts.length) {
+        const empty = document.createElement("div");
+        empty.className = "expr-empty";
+        empty.textContent = "Tap types and roles, then drag them into the expression.";
+        partsEl.appendChild(empty);
+      } else {
+        state.parts.forEach((part) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "leaf on" + (part.source === "type" ? " type" : "");
+          const used = treeLeaves().filter((n) => n.query === part.query).length;
+          btn.appendChild(document.createTextNode(part.label + (used ? " · " + used : "")));
+          const plus = document.createElement("span"); plus.className = "mini"; plus.textContent = "+";
+          btn.appendChild(plus);
+          btn.addEventListener("click", () => {
+            if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+            placePart(part);
+          });
+          bindBuilderDrag(btn, { kind: "part", query: part.query, label: part.label });
+          partsEl.appendChild(btn);
+        });
+      }
+      function joinEl(op) {
+        const el = document.createElement("span");
+        if (!op) { el.className = "join need"; el.textContent = ""; el.title = "Drop AND or OR"; }
+        else { el.className = "join" + (op === "or" ? " or" : ""); el.textContent = op === "or" ? "OR" : "AND"; }
+        return el;
+      }
+      function renderLeaf(node) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "leaf " + (node.not ? "not" : "on") + (node.source === "type" ? " type" : "") + (state.focusId === node.id ? " picked" : "");
+        btn.dataset.nodeId = node.id;
+        btn.appendChild(document.createTextNode((node.not ? "− " : "") + node.label));
+        const x = document.createElement("span"); x.className = "mini"; x.textContent = "×";
+        x.addEventListener("click", (e) => { e.stopPropagation(); state.focusId = node.id; removeFocused(); });
+        btn.appendChild(x);
+        bindBuilderDrag(btn, { kind: "node", id: node.id, label: node.label });
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+          state.focusId = node.id; renderBuilder();
+        });
+        btn.addEventListener("dblclick", (e) => { e.stopPropagation(); state.focusId = node.id; toggleNegate(); });
+        return btn;
+      }
+      function renderGroup(node) {
+        const box = document.createElement("div");
+        box.className = "box" + (node.op === "or" ? " or-box" : "") + (node.not ? " not-box" : "") + (state.focusId === node.id ? " focused" : "");
+        box.dataset.drop = node.id;
+        box.dataset.nodeId = node.id;
+        const open = document.createElement("span"); open.className = "paren"; open.textContent = node.not ? "NOT (" : "(";
+        const close = document.createElement("span"); close.className = "paren"; close.textContent = ")";
+        box.appendChild(open);
+        if (!node.children.length) {
+          const empty = document.createElement("span"); empty.className = "expr-empty";
+          empty.textContent = node.op === "or" ? "any of…" : (node.op === "and" ? "all of…" : "drop parts");
+          box.appendChild(empty);
+        } else {
+          node.children.forEach((ch, i) => {
+            if (i) box.appendChild(joinEl(node.op));
+            box.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
+          });
+        }
+        box.appendChild(close);
+        const x = document.createElement("span");
+        x.className = "mini";
+        x.textContent = "×";
+        x.title = "Remove this group";
+        x.addEventListener("click", (e) => {
+          e.stopPropagation();
+          state.focusId = node.id;
+          removeFocused();
+        });
+        box.appendChild(x);
+        bindBuilderDrag(box, { kind: "node", id: node.id, label: (node.not ? "NOT " : "") + "()" });
+        box.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+          state.focusId = node.id; renderBuilder();
+        });
+        return box;
+      }
+      space.dataset.drop = "root";
+      space.classList.toggle("focused", state.focusId === "root");
+      space.onclick = (e) => {
+        if (e.target !== space) return;
+        if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+        state.focusId = "root"; renderBuilder();
+      };
+      if (!state.tree.children.length) {
+        const empty = document.createElement("div");
+        empty.className = "expr-empty";
+        empty.textContent = "Drag parts, AND, OR, ( ), or NOT into this canvas. Joins stay unset until you drop one.";
+        space.appendChild(empty);
+      } else {
+        state.tree.children.forEach((ch, i) => {
+          if (i) space.appendChild(joinEl(state.tree.op));
+          space.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
+        });
+      }
+      const clause = treeClause();
+      if (read) {
+        read.innerHTML = "";
+        const plain = englishNode(state.tree);
+        if (!plain) {
+          const s = document.createElement("span"); s.className = "mute";
+          s.textContent = "No extra match yet — identity and mana still apply.";
+          read.appendChild(s);
+        } else {
+          plain.split(/(\bor\b|\band\b|\bnot\b|·|\(|\))/).forEach((bit) => {
+            const span = document.createElement("span");
+            if (bit === "or") span.className = "or";
+            else if (bit === "not") span.className = "not";
+            else if (bit === "and" || bit === "·" || bit === "(" || bit === ")") span.className = "mute";
+            span.textContent = bit; read.appendChild(span);
+          });
+        }
+      }
+      if (scry) {
+        const pending = state.tree.children.length > 1 && !state.tree.op;
+        scry.textContent = pending ? "Drop AND or OR to join the root clauses." : (clause || "—");
+      }
+      const box = focusedContainer();
+      const andBtn = $("addAndBtn"); const orBtn = $("addOrBtn"); const notBtn = $("addNotBtn");
+      if (andBtn) andBtn.classList.toggle("on", box.op === "and");
+      if (orBtn) orBtn.classList.toggle("on", box.op === "or");
+      const focus = findNode(state.focusId);
+      if (notBtn) notBtn.classList.toggle("on", !!(focus && focus.not));
+      if ($("placeAllBtn")) $("placeAllBtn").disabled = !state.parts.length;
+      if (hint) hint.textContent = "Drag parts and expressions. Empty join slots mean nothing is implied — drop AND or OR. × removes a part or group.";
+    }
+
     function paintKwMode() {
       const btn = $("kwMode");
       btn.dataset.mode = state.kwMode;
@@ -1448,7 +1963,19 @@
     });
     $("kwSheetBack").addEventListener("click", closeKeywordSheet);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeKeywordSheet();
+      if (e.key === "Escape") {
+        if (state.focusId !== "root") {
+          const parent = parentOf(state.focusId);
+          state.focusId = parent ? parent.id : "root";
+          renderBuilder();
+          return;
+        }
+        closeKeywordSheet();
+      }
+      if (e.key === "Backspace" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
+        e.preventDefault();
+        removeFocused();
+      }
     });
 
     (function bindSheetSwipe() {
@@ -1499,9 +2026,31 @@
       const bit = e.target.closest("[data-kw-mode]");
       if (!bit) return;
       state.kwMode = bit.dataset.kwMode;
+      state.tree.op = state.kwMode;
       paintKwMode();
       updatePreview();
     });
+    $("addAndBtn").addEventListener("click", () => {
+      if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+      setJoin("and");
+    });
+    $("addOrBtn").addEventListener("click", () => {
+      if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+      setJoin("or");
+    });
+    $("addGroupBtn").addEventListener("click", () => {
+      if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+      wrapParens();
+    });
+    $("addNotBtn").addEventListener("click", () => {
+      if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
+      toggleNegate();
+    });
+    $("placeAllBtn").addEventListener("click", placeAllParts);
+    bindBuilderDrag($("addAndBtn"), { kind: "expr", expr: "and", label: "AND" });
+    bindBuilderDrag($("addOrBtn"), { kind: "expr", expr: "or", label: "OR" });
+    bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "( )" });
+    bindBuilderDrag($("addNotBtn"), { kind: "expr", expr: "not", label: "NOT" });
 
     ["sort", "unique"].forEach((id) => {
       $(id).addEventListener("change", updatePreview);
@@ -1593,7 +2142,6 @@
     $("moreBtn").addEventListener("click", () => search(false));
     $("clearBtn").addEventListener("click", () => {
       state.colors.clear();
-      state.types = {};
       document.querySelectorAll("#colors .mana").forEach((b) => {
         b.classList.remove("on");
         b.setAttribute("aria-pressed", "false");
@@ -1604,7 +2152,9 @@
         if (b.dataset.label) b.textContent = b.dataset.label;
       });
       $("subtypeQuery").value = "";
-      state.keywords.clear();
+      state.tree = { id: "root", kind: "group", op: null, not: false, children: [] };
+      state.parts = [];
+      state.focusId = "root";
       state.kwOpen = null;
       state.kwMode = "and";
       state.idMode = "identity";
@@ -1666,8 +2216,10 @@
       if (kind === "none") {
         title.textContent = "Nothing in that slice";
         const tips = [];
-        if (state.kwMode === "and" && state.keywords.size > 1) {
-          tips.push("All means a card must have every selected role. Flip to Any.");
+        if (state.tree.op === "and" && state.tree.children.length > 1) {
+          tips.push("Root is AND — every clause must match. Drop or, or group alternatives.");
+        } else if (state.tree.children.length > 1 && !state.tree.op) {
+          tips.push("Root has no join yet. Drop AND or OR onto the canvas.");
         }
         if (state.idMode === "exact") {
           tips.push("Exact is only that color pair. Try Within or Identity.");
