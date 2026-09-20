@@ -457,6 +457,13 @@
       border-radius:6px; color:#6f7b8c; background:#0b0e13;
     }
     .expr-empty { color:var(--muted); font-size:0.8rem; padding:4px 2px; }
+    .builder, .parts, .workspace, .leaf, .box, .builder-actions button {
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body.builder-dragging { overflow: hidden; overscroll-behavior: none; }
     .leaf {
       display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
       background:var(--raised); color:var(--text); border-radius:999px;
@@ -629,6 +636,12 @@
         border-bottom: 1px solid var(--line);
       }
       .kw-panel { display: none !important; }
+      .workspace { min-height: 128px; padding: 16px; }
+      .parts { min-height: 52px; }
+      .leaf { padding: 8px 10px 8px 12px; font-size: 0.84rem; }
+      .box { min-height: 48px; }
+      .builder-actions button { min-height: 36px; padding: 8px 12px; }
+      .drag-ghost { font-size: 0.9rem; padding: 8px 14px; }
     }
 
     @media (min-width: 901px) {
@@ -1716,54 +1729,49 @@
       state.focusId = dest.id;
       updatePreview();
     }
-    const builderDrag = { on:false, moved:false, payload:null, ghost:null, fromEl:null, slot:null, ignoreClick:false };
-    function dragCleanup() {
-      if (builderDrag.ghost) builderDrag.ghost.remove();
+    const builderDrag = {
+      on: false, moved: false, payload: null, ghost: null, fromEl: null, slot: null,
+      ignoreClick: false, carry: null, holdTimer: null, pointerId: null
+    };
+    function clearHold() {
+      if (builderDrag.holdTimer) { clearTimeout(builderDrag.holdTimer); builderDrag.holdTimer = null; }
+    }
+    function dragCleanup(keepCarry) {
+      clearHold();
+      if (!keepCarry && builderDrag.ghost) builderDrag.ghost.remove();
       if (builderDrag.slot) builderDrag.slot.remove();
       document.querySelectorAll(".drop-on, .is-dragging").forEach((el) => el.classList.remove("drop-on", "is-dragging"));
       builderDrag.on = false; builderDrag.moved = false; builderDrag.payload = null;
-      builderDrag.ghost = null; builderDrag.fromEl = null; builderDrag.slot = null;
-    }
-    function dropIndexFor(container, x) {
-      const kids = [...container.querySelectorAll(":scope > [data-node-id]")];
-      for (let i = 0; i < kids.length; i++) {
-        const r = kids[i].getBoundingClientRect();
-        if (x < r.left + r.width / 2) return i;
+      builderDrag.fromEl = null; builderDrag.slot = null; builderDrag.pointerId = null;
+      if (!keepCarry) {
+        builderDrag.ghost = null;
+        builderDrag.carry = null;
+        document.body.classList.remove("builder-dragging");
       }
-      return kids.length;
     }
-    function bindBuilderDrag(el, payload) {
-      el.style.cursor = "grab";
-      el.addEventListener("pointerdown", (e) => {
-        if (e.button && e.button !== 0) return;
-        if (e.target.closest(".mini")) return;
-        builderDrag.on = true; builderDrag.moved = false; builderDrag.payload = payload;
-        builderDrag.fromEl = el; builderDrag.startX = e.clientX; builderDrag.startY = e.clientY;
-        try { el.setPointerCapture(e.pointerId); } catch (_) {}
-      });
-    }
-    function currentDrop(x, y) {
-      const hit = document.elementsFromPoint(x, y).find((n) => n.dataset && n.dataset.drop);
-      if (!hit) return null;
-      return { el: hit, dest: hit.dataset.drop, index: hit.dataset.drop === "parts" ? 0 : dropIndexFor(hit, x) };
-    }
-    window.addEventListener("pointermove", (e) => {
-      if (!builderDrag.on || !builderDrag.payload) return;
-      if (!builderDrag.moved && Math.hypot(e.clientX - builderDrag.startX, e.clientY - builderDrag.startY) < 7) return;
-      if (!builderDrag.moved) {
-        builderDrag.moved = true;
-        if (builderDrag.fromEl) builderDrag.fromEl.classList.add("is-dragging");
+    function liftGhost(label, x, y) {
+      if (!builderDrag.ghost) {
         const ghost = document.createElement("div");
         ghost.className = "drag-ghost";
-        ghost.textContent = builderDrag.payload.label || "expr";
         document.body.appendChild(ghost);
         builderDrag.ghost = ghost;
       }
-      if (builderDrag.ghost) { builderDrag.ghost.style.left = e.clientX + "px"; builderDrag.ghost.style.top = e.clientY + "px"; }
+      builderDrag.ghost.textContent = label || "expr";
+      builderDrag.ghost.style.left = x + "px";
+      builderDrag.ghost.style.top = y + "px";
+    }
+    function startLift(payload, fromEl, x, y) {
+      builderDrag.moved = true;
+      builderDrag.payload = payload;
+      if (fromEl) fromEl.classList.add("is-dragging");
+      document.body.classList.add("builder-dragging");
+      liftGhost(payload.label, x, y);
+    }
+    function paintDrop(x, y) {
       document.querySelectorAll(".drop-on").forEach((n) => n.classList.remove("drop-on"));
       if (builderDrag.slot) { builderDrag.slot.remove(); builderDrag.slot = null; }
-      const drop = currentDrop(e.clientX, e.clientY);
-      if (!drop) return;
+      const drop = currentDrop(x, y);
+      if (!drop) return drop;
       drop.el.classList.add("drop-on");
       if (drop.dest !== "parts") {
         const slot = document.createElement("span");
@@ -1773,17 +1781,97 @@
         else drop.el.insertBefore(slot, kids[drop.index]);
         builderDrag.slot = slot;
       }
-    });
-    window.addEventListener("pointerup", (e) => {
+      return drop;
+    }
+    function dropIndexFor(container, x) {
+      const kids = [...container.querySelectorAll(":scope > [data-node-id]")];
+      for (let i = 0; i < kids.length; i++) {
+        const r = kids[i].getBoundingClientRect();
+        if (x < r.left + r.width / 2) return i;
+      }
+      return kids.length;
+    }
+    function currentDrop(x, y) {
+      const stack = document.elementsFromPoint(x, y);
+      const hit = stack.find((n) => n.dataset && n.dataset.drop);
+      if (!hit) return null;
+      return { el: hit, dest: hit.dataset.drop, index: hit.dataset.drop === "parts" ? 0 : dropIndexFor(hit, x) };
+    }
+    function bindBuilderDrag(el, payload) {
+      el.style.cursor = "grab";
+      el.addEventListener("pointerdown", (e) => {
+        if (e.button && e.button !== 0) return;
+        if (e.target.closest(".mini")) return;
+        if (builderDrag.carry) return;
+        clearHold();
+        builderDrag.on = true;
+        builderDrag.moved = false;
+        builderDrag.payload = payload;
+        builderDrag.fromEl = el;
+        builderDrag.startX = e.clientX;
+        builderDrag.startY = e.clientY;
+        builderDrag.pointerId = e.pointerId;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        builderDrag.holdTimer = setTimeout(() => {
+          if (!builderDrag.on || builderDrag.moved) return;
+          startLift(payload, el, e.clientX, e.clientY);
+        }, 160);
+      });
+    }
+    function onDragMove(e) {
+      if ((!builderDrag.on && !builderDrag.carry) || (!builderDrag.payload && !builderDrag.carry)) return;
+      const x = e.clientX, y = e.clientY;
+      if (builderDrag.on && !builderDrag.moved) {
+        if (Math.hypot(x - builderDrag.startX, y - builderDrag.startY) < 8) return;
+        clearHold();
+        startLift(builderDrag.payload, builderDrag.fromEl, x, y);
+      }
+      if (e.cancelable) e.preventDefault();
+      const payload = builderDrag.payload || builderDrag.carry;
+      if (builderDrag.ghost) liftGhost(payload && payload.label, x, y);
+      paintDrop(x, y);
+    }
+    function onDragEnd(e) {
+      if (builderDrag.carry && !builderDrag.on) {
+        const drop = currentDrop(e.clientX, e.clientY);
+        const payload = builderDrag.carry;
+        builderDrag.ignoreClick = true;
+        if (drop) {
+          dragCleanup();
+          dropPayload(payload, drop.dest, drop.index);
+        }
+        return;
+      }
       if (!builderDrag.on) return;
       const payload = builderDrag.payload;
       const moved = builderDrag.moved;
       const drop = moved ? currentDrop(e.clientX, e.clientY) : null;
+      clearHold();
       if (moved) builderDrag.ignoreClick = true;
+      if (moved && payload && drop) {
+        dragCleanup();
+        dropPayload(payload, drop.dest, drop.index);
+        return;
+      }
+      if (moved && payload && !drop) {
+        builderDrag.carry = payload;
+        dragCleanup(true);
+        const hint = $("builderHint");
+        if (hint) hint.textContent = "Carrying " + (payload.label || "item") + " — tap the canvas or a group to place it.";
+        return;
+      }
       dragCleanup();
-      if (moved && payload && drop) dropPayload(payload, drop.dest, drop.index);
-    });
-    window.addEventListener("pointercancel", () => { if (builderDrag.on) dragCleanup(); });
+    }
+    document.addEventListener("pointermove", onDragMove, { passive: false, capture: true });
+    document.addEventListener("pointerup", onDragEnd, { capture: true });
+    document.addEventListener("pointercancel", onDragEnd, { capture: true });
+    document.addEventListener("touchmove", (e) => {
+      if ((builderDrag.on && builderDrag.moved) || builderDrag.carry) {
+        if (e.cancelable) e.preventDefault();
+        const t = e.touches[0] || e.changedTouches[0];
+        if (t) onDragMove({ clientX: t.clientX, clientY: t.clientY, cancelable: false });
+      }
+    }, { passive: false, capture: true });
 
     function renderBuilder() {
       const partsEl = $("parts");
@@ -1925,7 +2013,11 @@
       const focus = findNode(state.focusId);
       if (notBtn) notBtn.classList.toggle("on", !!(focus && focus.not));
       if ($("placeAllBtn")) $("placeAllBtn").disabled = !state.parts.length;
-      if (hint) hint.textContent = "Drag parts and expressions. Empty join slots mean nothing is implied — drop AND or OR. × removes a part or group.";
+      if (hint) {
+        hint.textContent = builderDrag.carry
+          ? "Carrying " + (builderDrag.carry.label || "item") + " — tap the canvas or a group to place it."
+          : "Drag onto the canvas. On a phone, hold briefly then drop, or hold and tap the group.";
+      }
     }
 
     function paintKwMode() {
@@ -1964,6 +2056,11 @@
     $("kwSheetBack").addEventListener("click", closeKeywordSheet);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
+        if (builderDrag.carry || builderDrag.on) {
+          dragCleanup();
+          renderBuilder();
+          return;
+        }
         if (state.focusId !== "root") {
           const parent = parentOf(state.focusId);
           state.focusId = parent ? parent.id : "root";
