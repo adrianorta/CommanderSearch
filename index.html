@@ -35,6 +35,7 @@
           <button class="mana" data-c="G" title="Green" aria-pressed="false"><img alt="G" src="https://svgs.scryfall.io/card-symbols/G.svg" /></button>
           <button class="mana" data-c="C" title="Colorless" aria-pressed="false"><img alt="C" src="https://svgs.scryfall.io/card-symbols/C.svg" /></button>
         </div>
+        <p class="control-hint">Choose colors to shape the card identity.</p>
       </section>
 
       <section class="sec sec-type">
@@ -157,32 +158,42 @@
 
       <div class="builder is-collapsed" id="builder">
         <button type="button" class="builder-toggle" id="builderToggle" aria-expanded="false" aria-controls="builderBody">
-          <span class="builder-read" id="builderRead"><span class="mute">Join types and roles with AND, OR, or NOT. Open to build a custom match.</span></span>
+          <span class="builder-read" id="builderRead"><span class="mute">Build a custom match from your selected filters.</span></span>
           <span class="builder-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="builder-body" id="builderBody">
         <div class="builder-board">
         <div class="builder-bar">
-          <div class="builder-title">Parts</div>
+          <div>
+            <div class="builder-title">Selected blocks</div>
+            <div class="builder-subtitle">Click Add to place a filter in your script.</div>
+          </div>
         </div>
         <div class="parts" id="parts"></div>
         <div class="tag-lineage-list" id="tagLineage" hidden></div>
         <div class="builder-bar">
-          <div class="builder-title">Expression</div>
+          <div>
+            <div class="builder-title">Script</div>
+            <div class="builder-subtitle">Choose how blocks should combine.</div>
+          </div>
           <div class="builder-actions">
-            <button type="button" id="addAndBtn">AND</button>
-            <button type="button" id="addOrBtn">OR</button>
-            <button type="button" id="addGroupBtn">( )</button>
-            <button type="button" id="addNotBtn">NOT</button>
+            <button type="button" id="addAndBtn" title="Require all blocks in this group">AND</button>
+            <button type="button" id="addOrBtn" title="Match any block in this group">OR</button>
+            <button type="button" id="addGroupBtn" title="Put the selected block in a nested group">Group</button>
+            <button type="button" id="addNotBtn" title="Exclude the selected block or group">NOT</button>
           </div>
         </div>
         <div class="workspace" id="workspace"></div>
+        <div class="builder-trash" id="builderTrash" data-drop="trash" role="button" tabindex="0" aria-label="Drag a block here to remove it" hidden>
+          <span class="trash-icon" aria-hidden="true"></span>
+        </div>
         </div>
         <div class="builder-hint" id="builderHint"></div>
         </div>
       </div>
 
       <div class="actions">
+        <div class="actions-kicker">Results</div>
         <div class="view-opts">
           <select id="sort" aria-label="Sort">
             <option value="edhrec" selected>EDHREC rank</option>
@@ -200,7 +211,10 @@
         <button id="searchBtn" class="primary">Search</button>
         <button id="clearBtn" class="ghost">Reset</button>
       </div>
-      <div class="query" id="queryPreview" title="Click to copy">f:commander game:paper</div>
+      <div class="query-box">
+        <div class="query-label">Generated query <span>Click to copy</span></div>
+        <div class="query" id="queryPreview" title="Click to copy" role="button" tabindex="0" aria-label="Copy generated Scryfall query">f:commander game:paper</div>
+      </div>
     </aside>
 
     <main class="stage">

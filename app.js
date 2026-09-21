@@ -457,6 +457,12 @@ queryPreview.addEventListener("click", async () => {
     }, 1200);
   }
 });
+queryPreview.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    queryPreview.click();
+  }
+});
 
 function selectedColors() {
   return COLORS.filter((c) => state.colors.has(c));
@@ -471,6 +477,17 @@ const MANA_RGB = {
   C: [201, 196, 184],
 };
 
+// These are UI colors, not literal mana-symbol colors. They stay vivid on
+// dark surfaces without turning white or colorless identities yellow.
+const THEME_RGB = {
+  W: [206, 183, 132],
+  U: [74, 169, 207],
+  B: [145, 113, 191],
+  R: [218, 103, 82],
+  G: [99, 180, 112],
+  C: [137, 157, 180],
+};
+
 function hexFromRgb(rgb) {
   return "#" + rgb.map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")).join("");
 }
@@ -480,21 +497,25 @@ function applyThemeRgb(rgb) {
   const a = hexFromRgb(rgb);
   root.style.setProperty("--accent", a);
   root.style.setProperty("--accent-2", a);
-  root.style.setProperty("--accent-glow", "color-mix(in srgb, " + a + " 48%, transparent)");
-  root.style.setProperty("--accent-soft", "color-mix(in srgb, " + a + " 20%, #1b212b)");
-  root.style.setProperty("--bg", "color-mix(in srgb, " + a + " 8%, #0c0e12)");
-  root.style.setProperty("--panel", "color-mix(in srgb, " + a + " 10%, #14181f)");
-  root.style.setProperty("--raised", "color-mix(in srgb, " + a + " 12%, #1b212b)");
-  root.style.setProperty("--line", "color-mix(in srgb, " + a + " 18%, #2a3140)");
+  root.style.setProperty("--accent-glow", "color-mix(in srgb, " + a + " 42%, transparent)");
+  root.style.setProperty("--accent-soft", "color-mix(in srgb, " + a + " 18%, #1b212b)");
+  root.style.setProperty("--accent-wash", "color-mix(in srgb, " + a + " 10%, transparent)");
+  root.style.setProperty("--accent-border", "color-mix(in srgb, " + a + " 58%, #526075)");
+  root.style.setProperty("--accent-light", "color-mix(in srgb, " + a + " 58%, white)");
+  root.style.setProperty("--accent-deep", "color-mix(in srgb, " + a + " 58%, #18212d)");
+  root.style.setProperty("--bg", "color-mix(in srgb, " + a + " 5%, #080a0e)");
+  root.style.setProperty("--panel", "color-mix(in srgb, " + a + " 7%, #11151c)");
+  root.style.setProperty("--raised", "color-mix(in srgb, " + a + " 9%, #181e28)");
+  root.style.setProperty("--line", "color-mix(in srgb, " + a + " 14%, #2b3443)");
 }
 
 function themeFromColors() {
   const picks = ALL_COLORS.filter((c) => state.colors.has(c));
   if (!picks.length) {
-    applyThemeRgb(MANA_RGB.C);
+    applyThemeRgb(THEME_RGB.C);
     return;
   }
-  const rgbs = picks.map((c) => MANA_RGB[c]);
+  const rgbs = picks.map((c) => THEME_RGB[c]);
   const avg = [0, 1, 2].map((i) => Math.round(rgbs.reduce((s, r) => s + r[i], 0) / rgbs.length));
   applyThemeRgb(avg);
 }
@@ -661,23 +682,6 @@ function pickCmcTick(n) {
 }
 
 function pruneEmptyGroups() {
-  walkTree(state.tree, (n) => {
-    if (n.kind === "group" && n.children && n.children.length) n.filled = true;
-  });
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const ids = [];
-    walkTree(state.tree, (n, parent) => {
-      if (parent && n.kind === "group" && n.filled && !(n.children && n.children.length)) ids.push(n.id);
-    });
-    ids.forEach((id) => {
-      const parent = parentOf(id);
-      if (!parent) return;
-      parent.children = parent.children.filter((ch) => ch.id !== id);
-      changed = true;
-    });
-  }
   if (state.focusId !== "root" && !findNode(state.focusId)) state.focusId = "root";
 }
 function updatePreview() {
@@ -892,9 +896,6 @@ function togglePaletteLeaf({ label, query, source }) {
   const idx = state.parts.findIndex((p) => p.query === query);
   if (idx >= 0) {
     state.parts.splice(idx, 1);
-    if (source === "type") removeQueryFromTree(query);
-    const gone = otagSlug(query);
-    if (gone) removeLineageFromTree(gone);
   } else {
     state.parts.push({ id: nextTreeId(), label, query, source });
     if (source === "type" && expressionIsSetup() && !treeLeaves().some((n) => n.query === query)) {
@@ -1224,6 +1225,16 @@ function returnLeavesToParts(node) {
 }
 function dropPayload(payload, destId, index) {
   if (!payload) return;
+  if (destId === "trash") {
+    if (payload.kind !== "node") return;
+    const node = findNode(payload.id);
+    if (!node || node.id === "root") return;
+    takeNode(payload.id);
+    state.focusId = "root";
+    renderKeywords();
+    updatePreview();
+    return;
+  }
   if (destId === "parts") {
     if (payload.kind === "part" || payload.kind === "expr") return;
     const node = takeNode(payload.id);
@@ -1281,6 +1292,7 @@ function dragCleanup(keepCarry) {
     builderDrag.ghost = null;
     builderDrag.carry = null;
     document.body.classList.remove("builder-dragging");
+    document.body.classList.remove("builder-node-dragging");
   }
 }
 function liftGhost(label, x, y) {
@@ -1299,6 +1311,7 @@ function startLift(payload, fromEl, x, y) {
   builderDrag.payload = payload;
   if (fromEl) fromEl.classList.add("is-dragging");
   document.body.classList.add("builder-dragging");
+  if (payload.kind === "node") document.body.classList.add("builder-node-dragging");
   liftGhost(payload.label, x, y);
 }
 function paintDrop(x, y) {
@@ -1307,14 +1320,6 @@ function paintDrop(x, y) {
   const drop = currentDrop(x, y);
   if (!drop) return drop;
   drop.el.classList.add("drop-on");
-  if (drop.dest !== "parts") {
-    const slot = document.createElement("span");
-    slot.className = "drop-slot";
-    const kids = [...drop.el.querySelectorAll(":scope > [data-node-id]")];
-    if (!kids.length || drop.index >= kids.length) drop.el.appendChild(slot);
-    else drop.el.insertBefore(slot, kids[drop.index]);
-    builderDrag.slot = slot;
-  }
   return drop;
 }
 function dropIndexFor(container, x) {
@@ -1335,6 +1340,8 @@ function bindBuilderDrag(el, payload) {
   el.style.cursor = "grab";
   el.addEventListener("pointerdown", (e) => {
     if (e.button && e.button !== 0) return;
+    const owner = e.target.closest("[data-node-id]");
+    if (owner && owner !== el) return;
     if (e.target.closest(".mini")) return;
     if (builderDrag.carry) return;
     clearHold();
@@ -1419,7 +1426,7 @@ function renderBuilder() {
   if (!state.parts.length) {
     const empty = document.createElement("div");
     empty.className = "expr-empty";
-    empty.textContent = "Tap types and roles, then drag them into the expression.";
+    empty.textContent = "Select a type or role above to create your first block.";
     partsEl.appendChild(empty);
   } else {
     state.parts.forEach((part) => {
@@ -1428,7 +1435,8 @@ function renderBuilder() {
       btn.className = "leaf on" + (part.source === "type" ? " type" : "");
       const used = treeLeaves().filter((n) => n.query === part.query).length;
       btn.appendChild(document.createTextNode(part.label + (used ? " · " + used : "")));
-      const plus = document.createElement("span"); plus.className = "mini"; plus.textContent = "+";
+      const plus = document.createElement("span"); plus.className = "mini"; plus.textContent = "Add";
+      btn.setAttribute("aria-label", "Add " + part.label + " to the script");
       btn.appendChild(plus);
       btn.addEventListener("click", () => {
         if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
@@ -1450,9 +1458,6 @@ function renderBuilder() {
     btn.className = "leaf " + (node.not ? "not" : "on") + (node.source === "type" ? " type" : "") + (state.focusId === node.id ? " picked" : "");
     btn.dataset.nodeId = node.id;
     btn.appendChild(document.createTextNode((node.not ? "− " : "") + node.label));
-    const x = document.createElement("span"); x.className = "mini"; x.textContent = "×";
-    x.addEventListener("click", (e) => { e.stopPropagation(); state.focusId = node.id; removeFocused(); });
-    btn.appendChild(x);
     bindBuilderDrag(btn, { kind: "node", id: node.id, label: node.label });
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1475,34 +1480,24 @@ function renderBuilder() {
   }
   function renderGroup(node) {
     const box = document.createElement("div");
-    box.className = "box" + (node.op === "or" ? " or-box" : "") + (node.not ? " not-box" : "") + (state.focusId === node.id ? " focused" : "");
+    box.className =
+      "box" +
+      (node.op === "or" ? " or-box" : "") +
+      (node.not ? " not-box" : "") +
+      (!node.children.length ? " empty-group" : "") +
+      (!node.op && node.children.length > 1 ? " pending-join" : "") +
+      (state.focusId === node.id ? " focused" : "");
     box.dataset.drop = node.id;
     box.dataset.nodeId = node.id;
-    const open = document.createElement("span"); open.className = "paren"; open.textContent = node.not ? "NOT (" : "(";
-    const close = document.createElement("span"); close.className = "paren"; close.textContent = ")";
-    box.appendChild(open);
     if (!node.children.length) {
-      const empty = document.createElement("span"); empty.className = "expr-empty";
-      empty.textContent = node.op === "or" ? "any of…" : (node.op === "and" ? "all of…" : "drop parts");
-      box.appendChild(empty);
+      box.setAttribute("aria-label", (node.not ? "Not " : "") + "empty expression group");
     } else {
       node.children.forEach((ch, i) => {
         if (i) box.appendChild(joinEl(node.op));
         box.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
       });
     }
-    box.appendChild(close);
-    const x = document.createElement("span");
-    x.className = "mini";
-    x.textContent = "×";
-    x.title = "Remove this group";
-    x.addEventListener("click", (e) => {
-      e.stopPropagation();
-      state.focusId = node.id;
-      removeFocused();
-    });
-    box.appendChild(x);
-    bindBuilderDrag(box, { kind: "node", id: node.id, label: (node.not ? "NOT " : "") + "()" });
+    bindBuilderDrag(box, { kind: "node", id: node.id, label: (node.not ? "NOT " : "") + "Group" });
     box.addEventListener("click", (e) => {
       e.stopPropagation();
       if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
@@ -1525,6 +1520,9 @@ function renderBuilder() {
     return box;
   }
   space.dataset.drop = "root";
+  space.classList.toggle("has-content", state.tree.children.length > 0);
+  const trash = $("builderTrash");
+  if (trash) trash.hidden = !state.tree.children.length;
   space.classList.toggle("focused", state.focusId === "root");
   space.onclick = (e) => {
     if (e.target !== space) return;
@@ -1534,7 +1532,7 @@ function renderBuilder() {
   if (!state.tree.children.length) {
     const empty = document.createElement("div");
     empty.className = "expr-empty";
-    empty.textContent = "Drag parts, AND, OR, ( ), or NOT into this canvas. Joins stay unset until you drop one.";
+    empty.textContent = "No blocks in your script yet. Click Add above to place one here.";
     space.appendChild(empty);
   } else {
     state.tree.children.forEach((ch, i) => {
@@ -1548,8 +1546,8 @@ function renderBuilder() {
     if (!plain) {
       const s = document.createElement("span"); s.className = "mute";
       s.textContent = state.builderOpen
-        ? "Drag types and roles in, then drop AND, OR, ( ), or NOT between them. Until then, All / Any joins your picks."
-        : "All / Any joins picked types and roles. Open to build AND / OR / NOT.";
+        ? "Add filters to the script, then choose AND, OR, Group, or NOT."
+        : "All / Any joins your picks. Open this to build a custom script.";
       read.appendChild(s);
     } else if (!expressionIsSetup()) {
       plain.split(/(\bor\b|\band\b|\bnot\b|·|\(|\))/).forEach((bit) => {
@@ -1578,7 +1576,7 @@ function renderBuilder() {
   if (hint) {
     hint.textContent = builderDrag.carry
       ? "Carrying " + (builderDrag.carry.label || "item") + " — tap the canvas or a group to place it."
-      : "Drag onto the canvas. On a phone, hold briefly then drop, or hold and tap the group.";
+      : "Click Add to place blocks. Dragging is optional; on a phone, hold a block to move it.";
   }
 }
 
@@ -1808,9 +1806,15 @@ $("addNotBtn").addEventListener("click", () => {
   if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
   toggleNegate();
 });
+$("builderTrash").addEventListener("click", () => {
+  if (!builderDrag.carry) return;
+  const payload = builderDrag.carry;
+  dragCleanup();
+  dropPayload(payload, "trash", 0);
+});
 bindBuilderDrag($("addAndBtn"), { kind: "expr", expr: "and", label: "AND" });
 bindBuilderDrag($("addOrBtn"), { kind: "expr", expr: "or", label: "OR" });
-bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "( )" });
+bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "Group" });
 bindBuilderDrag($("addNotBtn"), { kind: "expr", expr: "not", label: "NOT" });
 
 ["sort", "unique", "setQuery", "yearFrom", "yearTo"].forEach((id) => {
