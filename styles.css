@@ -2281,6 +2281,23 @@ select:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+@media (hover: none), (pointer: coarse) {
+  .mana:hover {
+    opacity: 0.32;
+    transform: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 5px 12px rgba(0, 0, 0, 0.22);
+  }
+
+  .mana.on:hover {
+    opacity: 1;
+    transform: none;
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 18px var(--accent-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
 .status::before {
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-wash), 0 0 12px var(--accent-glow);
@@ -2547,7 +2564,7 @@ body.builder-node-dragging .builder-trash.drop-on {
 .box {
   position: relative;
   align-items: flex-start;
-  padding: 10px 9px 10px 7px;
+  padding: 0 9px 10px 7px;
   border-radius: 10px;
   border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
   background:
@@ -2587,6 +2604,11 @@ body.builder-node-dragging .builder-trash.drop-on {
   color: var(--accent-light);
   font-size: 0.6rem;
   letter-spacing: 0.08em;
+}
+
+.workspace > .join {
+  align-self: flex-start;
+  margin-top: 12px;
 }
 
 .join.need {
