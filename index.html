@@ -502,6 +502,35 @@
     .leaf .mini { width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--muted); font-size:0.85rem; display:grid; place-items:center; }
     .builder-scry { margin-top:8px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.7rem; color:#7f8b9c; line-height:1.4; word-break:break-word; }
     .builder-hint { color:var(--muted); font-size:0.72rem; margin-top:6px; line-height:1.4; }
+    .tag-lineage-list { display: grid; gap: 6px; margin-top: 8px; }
+    .tag-box {
+      border-radius: 10px;
+      border: 1px dashed var(--line);
+      background: #0b0e13;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      color: var(--muted);
+      padding: 0;
+    }
+    .tag-box > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 10px;
+      color: var(--text);
+      font-weight: 650;
+    }
+    .tag-box > summary::-webkit-details-marker { display: none; }
+    .tag-box > summary::before { content: "▸ "; color: var(--muted); font-weight: 400; }
+    .tag-box[open] > summary::before { content: "▾ "; }
+    .tag-box .tag-box-body { padding: 0 10px 8px; }
+    .tag-box button {
+      display: inline-flex;
+      align-items: center;
+      margin: 2px 4px 0 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+    }
     .drag-ghost {
       position:fixed; z-index:80; pointer-events:none; padding:6px 10px; border-radius:999px;
       background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 80%, #fff);
@@ -896,6 +925,7 @@
           <div class="builder-title">Parts</div>
         </div>
         <div class="parts" id="parts"></div>
+        <div class="tag-lineage-list" id="tagLineage" hidden></div>
         <div class="builder-bar">
           <div class="builder-title">Expression</div>
           <div class="builder-actions">
@@ -965,61 +995,58 @@
         ["Ramp", "otag:ramp"],
         ["Mana rock", "otag:mana-rock"],
         ["Mana dork", "otag:mana-dork"],
-        ["Fast mana", "(cmc<=1 (otag:mana-rock or otag:ritual))"],
-        ["Treasure", "(kw:treasure or o:treasure)"],
         ["Ritual", "otag:ritual"],
-        ["Cost reduce", "(otag:cost-reduction or o:\"less to cast\")"],
+        ["Cost reduce", "otag:cost-reducer"],
+        ["Treasure", "kw:treasure"],
       ],
       "Combat": [
-        ["Extra combat", "otag:extra-combat"],
-        ["Pump", "(otag:pump or otag:combat-pump or o:\"gets +\")"],
+        ["Extra combat", "otag:extra-combat-phase"],
         ["Anthem", "otag:anthem"],
-        ["Goad", "(otag:goad or kw:goad)"],
-        ["Unblockable", "(otag:unblockable or otag:evasion)"],
+        ["Unblockable", "otag:unblockable"],
         ["Attacks trigger", "otag:attack-trigger"],
-        ["Fight", "(otag:fight or kw:fight)"],
+        ["Fight", "otag:removal-fight"],
         ["Fog", "otag:fog"],
         ["Overrun", "otag:overrun"],
+        ["Goad", "kw:goad"],
       ],
       "Protection": [
         ["Pillowfort", "otag:pillowfort"],
-        ["Grant hexproof", "(otag:grants-hexproof or o:\"gain hexproof\" or o:\"gains hexproof\" or o:\"have hexproof\")"],
-        ["Grant indestructible", "(otag:grants-indestructible or o:\"gain indestructible\" or o:\"gains indestructible\")"],
-        ["Damage prevention", "(otag:fog or o:\"prevent all\" o:damage)"],
+        ["Grant hexproof", "otag:gives-hexproof"],
+        ["Grant indestructible", "otag:gives-indestructible"],
       ],
       "Interaction": [
-        ["Board wipe", "(otag:board-wipe or otag:boardwipe or otag:wrath)"],
-        ["Spot removal", "(otag:removal or otag:removal-creature)"],
-        ["Edict", "otag:edict"],
-        ["Burn", "(otag:burn or otag:burn-creature or otag:burn-player or otag:burn-any)"],
-        ["Counterspell", "(otag:counterspell or otag:counter)"],
-        ["Stifle", "otag:stifle"],
+        ["Board wipe", "otag:sweeper"],
+        ["Spot removal", "otag:removal-creature"],
+        ["Edict", "otag:removal-sacrifice"],
+        ["Burn", "otag:burn"],
+        ["Counterspell", "otag:counterspell"],
+        ["Stifle", "otag:counterspell-ability"],
         ["Bounce", "otag:bounce"],
-        ["Prison", "(otag:prison or otag:pacifism or o:\"can't attack or block\")"],
-        ["Theft", "(otag:theft or otag:steal or o:\"gain control\")"],
+        ["Prison", "otag:pacifism"],
+        ["Theft", "otag:theft-creature"],
         ["Artifact hate", "otag:removal-artifact"],
         ["Enchantment hate", "otag:removal-enchantment"],
-        ["Land destruction", "(otag:removal-land or otag:land-destruction)"],
-        ["Graveyard hate", "otag:graveyard-hate"],
-        ["Hand hate", "(otag:hand-hate or o:\"target player discards\" or o:\"target opponent discards\" or o:\"each opponent discards\")"],
-        ["Stax", "(otag:stax or otag:tax)"],
+        ["Land destruction", "otag:removal-land"],
+        ["Graveyard hate", "otag:hate-graveyard"],
+        ["Hand hate", "otag:hate-discard"],
+        ["Stax", "otag:tax"],
       ],
       "Synergy": [
-        ["Sac outlet", "(otag:sacrifice-outlet or otag:sac-outlet)"],
-        ["Blink", "(otag:blink or otag:flicker)"],
-        ["Clone", "(otag:clone or otag:copy)"],
+        ["Sac outlet", "otag:sacrifice-outlet-creature"],
+        ["Blink", "otag:flicker"],
+        ["Clone", "otag:clone"],
         ["Lifegain", "otag:lifegain"],
-        ["Drain", "(otag:drain or otag:life-drain)"],
+        ["Drain", "otag:drain-life"],
       ],
       "Card flow": [
-        ["Draw", "(otag:draw or otag:card-advantage)"],
+        ["Draw", "otag:draw"],
         ["Cantrip", "otag:cantrip"],
-        ["Loot", "(otag:loot or otag:rummage)"],
-        ["Impulse", "(otag:impulse or otag:impulse-draw)"],
+        ["Loot", "otag:loot"],
+        ["Impulse", "otag:impulse"],
         ["Wheel", "otag:wheel"],
         ["Discard", "otag:discard"],
         ["Mill", "otag:mill"],
-        ["Self-mill", "(otag:self-mill or otag:mill-self)"],
+        ["Self-mill", "otag:mill-self"],
         ["Scry", "kw:scry"],
         ["Surveil", "kw:surveil"],
         ["Tutor", "otag:tutor"],
@@ -1027,31 +1054,26 @@
         ["Reanimate", "otag:reanimate"],
       ],
       "Engines": [
-        ["Tokens", "(otag:creates-tokens or o:token)"],
-        ["+1/+1 counters", "(otag:\"+1/+1-counters\" or o:\"+1/+1\")"],
-        ["Proliferate", "kw:proliferate"],
-        ["Food", "(otag:food or kw:food)"],
-        ["Clue", "(otag:clue or kw:clue)"],
-        ["Blood", "(otag:blood or kw:blood)"],
-        ["Copy", "(otag:copy or otag:clone)"],
-        ["ETB", "(otag:etb or otag:etb-trigger or o:\"when ~ enters\")"],
-        ["Dies", "(otag:dies-trigger or otag:death-trigger or o:dies)"],
+        ["Copy", "otag:copy"],
+        ["Dies", "otag:death-trigger"],
         ["Cast trigger", "otag:cast-trigger"],
+        ["Proliferate", "kw:proliferate"],
+        ["Food", "kw:food"],
+        ["Clue", "kw:clue"],
+        ["Blood", "kw:blood"],
       ],
       "Politics": [
         ["Group hug", "otag:group-hug"],
-        ["Monarch", "(otag:monarch or o:monarch)"],
-        ["Initiative", "(otag:initiative or o:initiative)"],
-        ["The Ring", "(otag:the-ring or o:\"the ring\" or o:\"ring tempts\")"],
+        ["Monarch", "otag:monarch-matters"],
+        ["Initiative", "otag:take-the-initiative"],
+        ["The Ring", "otag:the-ring-tempts-you"],
       ],
       "Finishers": [
-        ["Win the game", "(otag:win-the-game or o:\"win the game\")"],
-        ["Lose the game", "(otag:lose-the-game or o:\"lose the game\")"],
         ["Extra turn", "otag:extra-turn"],
-        ["Commander damage", "(otag:commander-damage or o:\"commander damage\")"],
-        ["Poison", "(otag:poison or otag:infect or kw:infect or kw:toxic)"],
+        ["Poison", "otag:poisonous"],
       ],
     };
+    const TAG_GRAPH = {"ramp":{"slug":"ramp","label":"ramp","n":555,"parents":[],"children":[{"slug":"land-ramp","label":"land ramp","n":497},{"slug":"combat-ramp","label":"combat ramp","n":160},{"slug":"mana-producer","label":"mana producer","n":125},{"slug":"ramp-with-set-s-mechanic","label":"ramp with set's mechanic","n":78},{"slug":"ritual","label":"ritual","n":70},{"slug":"mana-increaser","label":"mana increaser","n":64},{"slug":"extra-land","label":"extra land","n":36},{"slug":"repeatable-landers","label":"repeatable landers","n":3}],"siblings":[]},"mana-rock":{"slug":"mana-rock","label":"mana rock","n":110,"parents":[{"slug":"mana-producer","label":"mana producer","n":125}],"children":[{"slug":"utility-mana-rock","label":"utility mana rock","n":252},{"slug":"mana-rock-with-set-s-mechanic","label":"mana rock with set's mechanic","n":108},{"slug":"moxen","label":"moxen","n":10}],"siblings":[{"slug":"mana-dork","label":"mana dork","n":462},{"slug":"mana-dork-egg","label":"mana dork egg","n":32}]},"mana-dork":{"slug":"mana-dork","label":"mana dork","n":462,"parents":[{"slug":"mana-producer","label":"mana producer","n":125}],"children":[],"siblings":[{"slug":"mana-rock","label":"mana rock","n":110},{"slug":"mana-dork-egg","label":"mana dork egg","n":32}]},"ritual":{"slug":"ritual","label":"ritual","n":70,"parents":[{"slug":"ramp","label":"ramp","n":555}],"children":[],"siblings":[{"slug":"land-ramp","label":"land ramp","n":497},{"slug":"combat-ramp","label":"combat ramp","n":160},{"slug":"mana-producer","label":"mana producer","n":125},{"slug":"ramp-with-set-s-mechanic","label":"ramp with set's mechanic","n":78},{"slug":"mana-increaser","label":"mana increaser","n":64},{"slug":"extra-land","label":"extra land","n":36},{"slug":"repeatable-landers","label":"repeatable landers","n":3}]},"cost-reducer":{"slug":"cost-reducer","label":"cost reducer","n":114,"parents":[],"children":[{"slug":"cost-reducer-creature","label":"cost-reducer-creature","n":85},{"slug":"cost-reducer-activated-ability","label":"cost-reducer-activated-ability","n":25},{"slug":"cost-reducer-colored-mana","label":"cost-reducer-colored-mana","n":21},{"slug":"cost-reducer-equip-ability","label":"cost-reducer-equip-ability","n":21},{"slug":"cost-reducer-artifact","label":"cost-reducer-artifact","n":20},{"slug":"gives-affinity","label":"gives affinity","n":17},{"slug":"gives-convoke","label":"gives convoke","n":14},{"slug":"cost-reducer-enchantment","label":"cost-reducer-enchantment","n":11},{"slug":"cost-reducer-noncreature","label":"cost-reducer-noncreature","n":11},{"slug":"cost-reducer-planeswalker","label":"cost-reducer-planeswalker","n":5}],"siblings":[]},"extra-combat-phase":{"slug":"extra-combat-phase","label":"extra combat phase","n":54,"parents":[{"slug":"phase-manipulation","label":"phase manipulation","n":15}],"children":[],"siblings":[{"slug":"skip-draw-step","label":"skip draw step","n":20},{"slug":"skip-untap-step","label":"skip untap step","n":11},{"slug":"extra-upkeep","label":"extra upkeep","n":7},{"slug":"extra-draw-step","label":"extra draw step","n":4}]},"anthem":{"slug":"anthem","label":"anthem","n":576,"parents":[],"children":[],"siblings":[]},"unblockable":{"slug":"unblockable","label":"unblockable","n":206,"parents":[{"slug":"evasion","label":"evasion","n":4745}],"children":[],"siblings":[{"slug":"gains-flying","label":"gains flying","n":319},{"slug":"gains-menace","label":"gains menace","n":87},{"slug":"french-vanilla-walker","label":"french vanilla walker","n":68},{"slug":"unique-evasion","label":"unique evasion","n":51},{"slug":"daunt","label":"daunt","n":42},{"slug":"gains-protection","label":"gains protection","n":42},{"slug":"high-flying","label":"high flying","n":35},{"slug":"stalking","label":"stalking","n":28}]},"evasion":{"slug":"evasion","label":"evasion","n":4745,"parents":[],"children":[{"slug":"gains-flying","label":"gains flying","n":319},{"slug":"unblockable","label":"unblockable","n":206},{"slug":"gains-menace","label":"gains menace","n":87},{"slug":"french-vanilla-walker","label":"french vanilla walker","n":68},{"slug":"unique-evasion","label":"unique evasion","n":51},{"slug":"daunt","label":"daunt","n":42},{"slug":"gains-protection","label":"gains protection","n":42},{"slug":"high-flying","label":"high flying","n":35},{"slug":"stalking","label":"stalking","n":28},{"slug":"skulk","label":"skulk","n":18}],"siblings":[]},"attack-trigger":{"slug":"attack-trigger","label":"attack trigger","n":2077,"parents":[{"slug":"triggered-ability","label":"triggered ability","n":7961}],"children":[{"slug":"titan-trigger","label":"titan trigger","n":175},{"slug":"firebend-like","label":"firebend-like","n":45},{"slug":"gains-firebending","label":"gains firebending","n":1}],"siblings":[{"slug":"intervening-if-clause","label":"intervening if clause","n":2207},{"slug":"delayed-trigger","label":"delayed trigger","n":1132},{"slug":"death-trigger","label":"death trigger","n":593},{"slug":"block-trigger","label":"block trigger","n":422},{"slug":"reflexive-trigger","label":"reflexive trigger","n":317},{"slug":"ward","label":"ward","n":168},{"slug":"cast-trigger","label":"cast trigger","n":148},{"slug":"trigger-from-graveyard","label":"trigger from graveyard","n":147}]},"fog":{"slug":"fog","label":"fog","n":36,"parents":[{"slug":"damage-prevention","label":"damage prevention","n":373}],"children":[{"slug":"fog-selective","label":"fog-selective","n":61}],"siblings":[{"slug":"damage-redirection","label":"damage redirection","n":51},{"slug":"absorb","label":"absorb","n":24},{"slug":"ablative-armor","label":"ablative armor","n":22},{"slug":"dolmen-ability","label":"dolmen ability","n":9},{"slug":"circle-of-protection","label":"circle of protection","n":9}]},"overrun":{"slug":"overrun","label":"overrun","n":97,"parents":[{"slug":"gives-trample","label":"gives trample","n":451},{"slug":"power-boost-to-all","label":"power boost to all","n":959}],"children":[],"siblings":[{"slug":"gives-pp-counters-to-all","label":"gives pp counters to all","n":207},{"slug":"trumpet-blast","label":"trumpet blast","n":35},{"slug":"battle-cry","label":"battle cry","n":18},{"slug":"prowess-anthem","label":"prowess anthem","n":8}]},"pillowfort":{"slug":"pillowfort","label":"pillowfort","n":21,"parents":[],"children":[{"slug":"tax-attack","label":"tax attack","n":41}],"siblings":[]},"gives-hexproof":{"slug":"gives-hexproof","label":"gives hexproof","n":168,"parents":[{"slug":"protection","label":"protection","n":0}],"children":[],"siblings":[{"slug":"protects-creature","label":"protects-creature","n":781},{"slug":"protects-all","label":"protects-all","n":293},{"slug":"gives-indestructible","label":"gives indestructible","n":287},{"slug":"gives-protection","label":"gives protection","n":127},{"slug":"protects-planeswalker","label":"protects-planeswalker","n":102},{"slug":"gives-ward","label":"gives ward","n":71},{"slug":"protects-artifact","label":"protects-artifact","n":65},{"slug":"gains-hexproof","label":"gains hexproof","n":63}]},"gives-indestructible":{"slug":"gives-indestructible","label":"gives indestructible","n":287,"parents":[{"slug":"protection","label":"protection","n":0}],"children":[],"siblings":[{"slug":"protects-creature","label":"protects-creature","n":781},{"slug":"protects-all","label":"protects-all","n":293},{"slug":"gives-hexproof","label":"gives hexproof","n":168},{"slug":"gives-protection","label":"gives protection","n":127},{"slug":"protects-planeswalker","label":"protects-planeswalker","n":102},{"slug":"gives-ward","label":"gives ward","n":71},{"slug":"protects-artifact","label":"protects-artifact","n":65},{"slug":"gains-hexproof","label":"gains hexproof","n":63}]},"sweeper":{"slug":"sweeper","label":"sweeper","n":741,"parents":[{"slug":"removal","label":"removal","n":0}],"children":[{"slug":"sweeper-one-sided","label":"sweeper-one-sided","n":243}],"siblings":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"removal-creature","label":"removal-creature","n":1930},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-sacrifice","label":"removal-sacrifice","n":364}]},"removal":{"slug":"removal","label":"removal","n":0,"parents":[],"children":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"removal-creature","label":"removal-creature","n":1930},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"sweeper","label":"sweeper","n":741},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-sacrifice","label":"removal-sacrifice","n":364},{"slug":"removal-bounce","label":"removal-bounce","n":346}],"siblings":[]},"removal-creature":{"slug":"removal-creature","label":"removal-creature","n":1930,"parents":[{"slug":"removal","label":"removal","n":0}],"children":[{"slug":"burn-creature","label":"burn creature","n":1047},{"slug":"removal-toughness","label":"removal-toughness","n":614},{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-permanent","label":"removal-permanent","n":213},{"slug":"man-o-war","label":"man-o'-war","n":99},{"slug":"pacifism","label":"pacifism","n":96},{"slug":"doom-blade","label":"doom blade","n":84},{"slug":"no-mercy","label":"no mercy","n":7},{"slug":"buttfight","label":"buttfight","n":4},{"slug":"removal-nonenchantment","label":"removal-nonenchantment","n":3}],"siblings":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"sweeper","label":"sweeper","n":741},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-sacrifice","label":"removal-sacrifice","n":364}]},"burn":{"slug":"burn","label":"burn","n":0,"parents":[],"children":[{"slug":"burn-player","label":"burn player","n":899},{"slug":"bombard-self","label":"bombard-self","n":134},{"slug":"bombard","label":"bombard","n":115},{"slug":"burn-battle","label":"burn battle","n":13},{"slug":"removal-burn","label":"removal-burn","n":0}],"siblings":[]},"counterspell":{"slug":"counterspell","label":"counterspell","n":98,"parents":[{"slug":"blue-effect","label":"blue effect","n":0}],"children":[{"slug":"counterspell-with-set-mechanic","label":"counterspell with set mechanic","n":169},{"slug":"counterspell-soft","label":"counterspell-soft","n":138},{"slug":"counterspell-reusable","label":"counterspell-reusable","n":76},{"slug":"counterspell-ability","label":"counterspell-ability","n":51},{"slug":"counterspell-creature","label":"counterspell-creature","n":51},{"slug":"counterspell-automatic","label":"counterspell-automatic","n":38},{"slug":"counterspell-exile","label":"counterspell-exile","n":38},{"slug":"counterspell-noncreature","label":"counterspell-noncreature","n":35},{"slug":"counterspell-sacrifice","label":"counterspell-sacrifice","n":31},{"slug":"counterspell-instant","label":"counterspell-instant","n":30}],"siblings":[{"slug":"removal-bounce","label":"removal-bounce","n":346},{"slug":"loot","label":"loot","n":121},{"slug":"extra-turn","label":"extra turn","n":64},{"slug":"loot-to-library","label":"loot to library","n":10}]},"bounce":{"slug":"bounce","label":"bounce","n":6,"parents":[],"children":[{"slug":"removal-bounce","label":"removal-bounce","n":346},{"slug":"bounce-self","label":"bounce-self","n":183},{"slug":"alternate-cost-bounce","label":"alternate-cost-bounce","n":40},{"slug":"rescue","label":"rescue","n":4}],"siblings":[]},"pacifism":{"slug":"pacifism","label":"pacifism","n":96,"parents":[{"slug":"removal-creature","label":"removal-creature","n":1930}],"children":[],"siblings":[{"slug":"burn-creature","label":"burn creature","n":1047},{"slug":"removal-toughness","label":"removal-toughness","n":614},{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-permanent","label":"removal-permanent","n":213},{"slug":"man-o-war","label":"man-o'-war","n":99},{"slug":"doom-blade","label":"doom blade","n":84},{"slug":"no-mercy","label":"no mercy","n":7},{"slug":"buttfight","label":"buttfight","n":4}]},"theft-creature":{"slug":"theft-creature","label":"theft-creature","n":239,"parents":[{"slug":"theft","label":"theft","n":19}],"children":[],"siblings":[{"slug":"theft-cast","label":"theft-cast","n":210},{"slug":"threaten","label":"threaten","n":82},{"slug":"theft-artifact","label":"theft-artifact","n":58},{"slug":"theft-mass","label":"theft-mass","n":51},{"slug":"reanimate-from-opponent","label":"reanimate-from-opponent","n":50},{"slug":"theft-permanent","label":"theft-permanent","n":36},{"slug":"theft-land","label":"theft-land","n":26},{"slug":"theft-nonland","label":"theft-nonland","n":22}]},"removal-artifact":{"slug":"removal-artifact","label":"removal-artifact","n":341,"parents":[{"slug":"removal","label":"removal","n":0}],"children":[{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-permanent","label":"removal-permanent","n":213},{"slug":"disenchant-naturalize","label":"disenchant/naturalize","n":179},{"slug":"abrade","label":"abrade","n":44},{"slug":"removal-noncreature","label":"removal-noncreature","n":15},{"slug":"removal-nonenchantment","label":"removal-nonenchantment","n":3}],"siblings":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"removal-creature","label":"removal-creature","n":1930},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"sweeper","label":"sweeper","n":741},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402}]},"removal-enchantment":{"slug":"removal-enchantment","label":"removal-enchantment","n":224,"parents":[{"slug":"removal","label":"removal","n":0}],"children":[{"slug":"removal-nonland","label":"removal-nonland","n":402},{"slug":"removal-permanent","label":"removal-permanent","n":213},{"slug":"disenchant-naturalize","label":"disenchant/naturalize","n":179},{"slug":"removal-noncreature","label":"removal-noncreature","n":15}],"siblings":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"removal-creature","label":"removal-creature","n":1930},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"sweeper","label":"sweeper","n":741},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402}]},"removal-land":{"slug":"removal-land","label":"removal-land","n":301,"parents":[{"slug":"removal","label":"removal","n":0}],"children":[{"slug":"removal-permanent","label":"removal-permanent","n":213},{"slug":"removal-noncreature","label":"removal-noncreature","n":15},{"slug":"removal-nonenchantment","label":"removal-nonenchantment","n":3}],"siblings":[{"slug":"spot-removal","label":"spot removal","n":5529},{"slug":"removal-creature","label":"removal-creature","n":1930},{"slug":"repeatable-removal","label":"repeatable removal","n":1786},{"slug":"removal-destroy","label":"removal-destroy","n":1718},{"slug":"sweeper","label":"sweeper","n":741},{"slug":"multi-removal","label":"multi removal","n":680},{"slug":"removal-exile","label":"removal-exile","n":454},{"slug":"removal-nonland","label":"removal-nonland","n":402}]},"hate-graveyard":{"slug":"hate-graveyard","label":"hate-graveyard","n":291,"parents":[{"slug":"hate","label":"hate","n":0}],"children":[{"slug":"sweeper-graveyard","label":"sweeper-graveyard","n":83},{"slug":"graveyard-seal","label":"graveyard seal","n":55},{"slug":"single-minded-graveyard-hate","label":"single-minded graveyard hate","n":16}],"siblings":[{"slug":"hate-attacker","label":"hate-attacker","n":374},{"slug":"hate-blocker","label":"hate-blocker","n":367},{"slug":"hate-set-mechanic","label":"hate-set-mechanic","n":274},{"slug":"hate-artifact","label":"hate-artifact","n":198},{"slug":"hate-high-pt","label":"hate-high-pt","n":168},{"slug":"hate-tapped","label":"hate-tapped","n":156},{"slug":"hate-flying","label":"hate-flying","n":142},{"slug":"hate-regenerate","label":"hate-regenerate","n":141}]},"hate-discard":{"slug":"hate-discard","label":"hate-discard","n":138,"parents":[{"slug":"hate","label":"hate","n":0}],"children":[],"siblings":[{"slug":"hate-attacker","label":"hate-attacker","n":374},{"slug":"hate-blocker","label":"hate-blocker","n":367},{"slug":"hate-graveyard","label":"hate-graveyard","n":291},{"slug":"hate-set-mechanic","label":"hate-set-mechanic","n":274},{"slug":"hate-artifact","label":"hate-artifact","n":198},{"slug":"hate-high-pt","label":"hate-high-pt","n":168},{"slug":"hate-tapped","label":"hate-tapped","n":156},{"slug":"hate-flying","label":"hate-flying","n":142}]},"tax":{"slug":"tax","label":"tax","n":1,"parents":[],"children":[{"slug":"rhystic","label":"rhystic","n":269},{"slug":"toll","label":"toll","n":195},{"slug":"cast-tax","label":"cast tax","n":17}],"siblings":[]},"sacrifice-outlet-creature":{"slug":"sacrifice-outlet-creature","label":"sacrifice outlet-creature","n":898,"parents":[{"slug":"sacrifice-outlet","label":"sacrifice outlet","n":12}],"children":[{"slug":"sacrifice-outlet-universal","label":"sacrifice outlet-universal","n":53},{"slug":"fling","label":"fling","n":34},{"slug":"sacrifice-outlet-nonland","label":"sacrifice outlet-nonland","n":18},{"slug":"emerge-from-creature","label":"emerge-from-creature","n":14},{"slug":"gives-casualty","label":"gives casualty","n":4}],"siblings":[{"slug":"repeatable-sacrifice-outlet","label":"repeatable sacrifice outlet","n":599},{"slug":"sacrifice-outlet-artifact","label":"sacrifice outlet-artifact","n":294},{"slug":"sacrifice-outlet-land","label":"sacrifice outlet-land","n":240},{"slug":"bombard","label":"bombard","n":115},{"slug":"plunder","label":"plunder","n":81},{"slug":"sacrifice-outlet-enchantment","label":"sacrifice outlet-enchantment","n":62},{"slug":"sacrifice-outlet-universal","label":"sacrifice outlet-universal","n":53},{"slug":"sacrifice-outlet-token","label":"sacrifice outlet-token","n":46}]},"flicker":{"slug":"flicker","label":"flicker","n":1,"parents":[],"children":[{"slug":"flicker-creature","label":"flicker-creature","n":137},{"slug":"flicker-slow","label":"flicker-slow","n":110},{"slug":"flicker-self","label":"flicker-self","n":41},{"slug":"flicker-artifact","label":"flicker-artifact","n":16},{"slug":"flicker-land","label":"flicker-land","n":7},{"slug":"flicker-enchantment","label":"flicker-enchantment","n":3},{"slug":"flicker-planeswalker","label":"flicker-planeswalker","n":2},{"slug":"flicker-vehicle","label":"flicker-vehicle","n":1},{"slug":"flicker-nonenchantment","label":"flicker-nonenchantment","n":1}],"siblings":[]},"clone":{"slug":"clone","label":"clone","n":64,"parents":[{"slug":"copy","label":"copy","n":7}],"children":[{"slug":"clone-graveyard","label":"clone graveyard","n":7},{"slug":"clone-assassin","label":"clone assassin","n":2}],"siblings":[{"slug":"copy-creature","label":"copy-creature","n":364},{"slug":"copy-self","label":"copy-self","n":314},{"slug":"copy-instant","label":"copy-instant","n":161},{"slug":"copy-sorcery","label":"copy-sorcery","n":156},{"slug":"copy-spell","label":"copy-spell","n":155},{"slug":"shapesharing","label":"shapesharing","n":72},{"slug":"copy-artifact","label":"copy-artifact","n":71},{"slug":"copy-token","label":"copy-token","n":56}]},"lifegain":{"slug":"lifegain","label":"lifegain","n":893,"parents":[],"children":[{"slug":"repeatable-lifegain","label":"repeatable lifegain","n":1412},{"slug":"drain-life","label":"drain life","n":399},{"slug":"gives-lifelink","label":"gives lifelink","n":234},{"slug":"gains-lifelink","label":"gains lifelink","n":105},{"slug":"drain-creature","label":"drain creature","n":97},{"slug":"old-lifelink","label":"old lifelink","n":28},{"slug":"gives-lifelink-noncreature","label":"gives lifelink noncreature","n":9},{"slug":"gainland","label":"gainland","n":8}],"siblings":[]},"drain-life":{"slug":"drain-life","label":"drain life","n":399,"parents":[{"slug":"lifegain","label":"lifegain","n":893},{"slug":"inverted-effects","label":"inverted effects","n":71}],"children":[{"slug":"blood-artist-ability","label":"blood artist ability","n":41},{"slug":"gives-extort","label":"gives extort","n":1}],"siblings":[{"slug":"repeatable-lifegain","label":"repeatable lifegain","n":1412},{"slug":"gives-lifelink","label":"gives lifelink","n":234},{"slug":"gains-lifelink","label":"gains lifelink","n":105},{"slug":"drain-creature","label":"drain creature","n":97},{"slug":"old-lifelink","label":"old lifelink","n":28},{"slug":"drain-strength","label":"drain strength","n":27},{"slug":"gives-lifelink-noncreature","label":"gives lifelink noncreature","n":9},{"slug":"gainland","label":"gainland","n":8}]},"draw":{"slug":"draw","label":"draw","n":0,"parents":[{"slug":"card-advantage","label":"card advantage","n":57}],"children":[{"slug":"pure-draw","label":"pure draw","n":1280},{"slug":"burst-draw","label":"burst draw","n":655},{"slug":"curiosity","label":"curiosity","n":258},{"slug":"loot","label":"loot","n":121},{"slug":"rummage","label":"rummage","n":119},{"slug":"plunder","label":"plunder","n":81},{"slug":"enchantment-engine","label":"enchantment engine","n":21},{"slug":"brainstorm","label":"brainstorm","n":16},{"slug":"loot-to-library","label":"loot to library","n":10},{"slug":"rummage-to-library","label":"rummage to library","n":10}],"siblings":[{"slug":"repeatable-card-advantage","label":"repeatable card advantage","n":350},{"slug":"life-for-cards","label":"life for cards","n":299},{"slug":"tome","label":"tome","n":159},{"slug":"impulse","label":"impulse","n":66},{"slug":"consult","label":"consult","n":36},{"slug":"regrowth","label":"regrowth","n":36},{"slug":"impulsive-draw","label":"impulsive draw","n":31},{"slug":"land-or-hand","label":"land or hand","n":17}]},"cantrip":{"slug":"cantrip","label":"cantrip","n":688,"parents":[{"slug":"pure-draw","label":"pure draw","n":1280}],"children":[],"siblings":[{"slug":"repeatable-pure-draw","label":"repeatable pure draw","n":1408},{"slug":"delayed-cantrip","label":"delayed cantrip","n":59},{"slug":"opaline-effect","label":"opaline effect","n":18},{"slug":"drawlink","label":"drawlink","n":11}]},"loot":{"slug":"loot","label":"loot","n":121,"parents":[{"slug":"blue-effect","label":"blue effect","n":0},{"slug":"discard-outlet","label":"discard outlet","n":499},{"slug":"draw","label":"draw","n":0}],"children":[{"slug":"repeatable-loot","label":"repeatable loot","n":254},{"slug":"catalog","label":"catalog","n":51},{"slug":"sift","label":"sift","n":17},{"slug":"compulsive-research","label":"compulsive research","n":13},{"slug":"probe","label":"probe","n":7}],"siblings":[{"slug":"pure-draw","label":"pure draw","n":1280},{"slug":"burst-draw","label":"burst draw","n":655},{"slug":"removal-bounce","label":"removal-bounce","n":346},{"slug":"curiosity","label":"curiosity","n":258},{"slug":"rummage","label":"rummage","n":119},{"slug":"counterspell","label":"counterspell","n":98},{"slug":"plunder","label":"plunder","n":81},{"slug":"free-discard-outlet","label":"free discard outlet","n":69}]},"impulse":{"slug":"impulse","label":"impulse","n":66,"parents":[{"slug":"card-advantage","label":"card advantage","n":57}],"children":[{"slug":"repeatable-impulse","label":"repeatable impulse","n":173},{"slug":"impulse-creature","label":"impulse-creature","n":152},{"slug":"mulch","label":"mulch","n":120},{"slug":"impulse-land","label":"impulse-land","n":106},{"slug":"impulse-artifact","label":"impulse-artifact","n":44},{"slug":"impulse-permanent","label":"impulse-permanent","n":37},{"slug":"impulse-enchantment","label":"impulse-enchantment","n":25},{"slug":"impulse-cast","label":"impulse-cast","n":25},{"slug":"impulse-instant","label":"impulse-instant","n":22},{"slug":"impulse-sorcery","label":"impulse-sorcery","n":22}],"siblings":[{"slug":"repeatable-card-advantage","label":"repeatable card advantage","n":350},{"slug":"life-for-cards","label":"life for cards","n":299},{"slug":"tome","label":"tome","n":159},{"slug":"consult","label":"consult","n":36},{"slug":"regrowth","label":"regrowth","n":36},{"slug":"impulsive-draw","label":"impulsive draw","n":31},{"slug":"land-or-hand","label":"land or hand","n":17},{"slug":"impulsive-mill","label":"impulsive mill","n":5}]},"wheel":{"slug":"wheel","label":"wheel","n":1,"parents":[{"slug":"draw","label":"draw","n":0}],"children":[{"slug":"wheel-one-sided","label":"wheel-one-sided","n":107},{"slug":"miniwheel","label":"miniwheel","n":48},{"slug":"wheel-symmetrical","label":"wheel-symmetrical","n":42},{"slug":"whirlpool","label":"whirlpool","n":36}],"siblings":[{"slug":"pure-draw","label":"pure draw","n":1280},{"slug":"burst-draw","label":"burst draw","n":655},{"slug":"curiosity","label":"curiosity","n":258},{"slug":"loot","label":"loot","n":121},{"slug":"rummage","label":"rummage","n":119},{"slug":"plunder","label":"plunder","n":81},{"slug":"enchantment-engine","label":"enchantment engine","n":21},{"slug":"brainstorm","label":"brainstorm","n":16}]},"discard":{"slug":"discard","label":"discard","n":572,"parents":[{"slug":"hand-disruption","label":"hand disruption","n":15},{"slug":"black-effect","label":"black effect","n":0}],"children":[{"slug":"discard-symmetrical","label":"discard-symmetrical","n":29},{"slug":"torment","label":"torment","n":17}],"siblings":[{"slug":"life-for-cards","label":"life for cards","n":299},{"slug":"discard-with-set-s-mechanic","label":"discard with set's mechanic","n":204},{"slug":"thoughtseize","label":"thoughtseize","n":156},{"slug":"tutor-card","label":"tutor-card","n":112},{"slug":"discard-to-exile","label":"discard to exile","n":75},{"slug":"specter-ability","label":"specter ability","n":63},{"slug":"deal-with-the-devil","label":"deal with the devil","n":47},{"slug":"random-discard","label":"random discard","n":39}]},"mill":{"slug":"mill","label":"mill","n":0,"parents":[],"children":[{"slug":"mill-self","label":"mill-self","n":341},{"slug":"mill-opponent","label":"mill-opponent","n":196},{"slug":"mill-any","label":"mill-any","n":191},{"slug":"mill-exile","label":"mill-exile","n":122},{"slug":"grind","label":"grind","n":10}],"siblings":[]},"mill-self":{"slug":"mill-self","label":"mill-self","n":341,"parents":[{"slug":"mill","label":"mill","n":0}],"children":[{"slug":"surveil","label":"surveil","n":224},{"slug":"mill-any","label":"mill-any","n":191},{"slug":"mulch","label":"mulch","n":120},{"slug":"mill-each","label":"mill-each","n":61}],"siblings":[{"slug":"mill-opponent","label":"mill-opponent","n":196},{"slug":"mill-any","label":"mill-any","n":191},{"slug":"mill-exile","label":"mill-exile","n":122},{"slug":"grind","label":"grind","n":10}]},"tutor":{"slug":"tutor","label":"tutor","n":0,"parents":[],"children":[{"slug":"tutor-card","label":"tutor-card","n":112},{"slug":"tutor-creature","label":"tutor-creature","n":96},{"slug":"tutor-mv","label":"tutor-mv","n":90},{"slug":"tutors-by-name","label":"tutors by name","n":82},{"slug":"tutor-artifact","label":"tutor-artifact","n":47},{"slug":"tutor-instant","label":"tutor-instant","n":23},{"slug":"tutor-copy","label":"tutor-copy","n":18},{"slug":"tutor-from-opponent","label":"tutor-from-opponent","n":17},{"slug":"tutor-enchantment","label":"tutor-enchantment","n":16},{"slug":"tutor-sorcery","label":"tutor-sorcery","n":16}],"siblings":[]},"recursion":{"slug":"recursion","label":"recursion","n":0,"parents":[],"children":[{"slug":"gives-castable-from-graveyard","label":"gives castable from graveyard","n":116},{"slug":"copy-from-graveyard","label":"copy from graveyard","n":50},{"slug":"demilich-effect","label":"demilich effect","n":37},{"slug":"regrowth","label":"regrowth","n":36},{"slug":"impulsive-recursion","label":"impulsive recursion","n":21},{"slug":"grim-return","label":"grim return","n":15},{"slug":"recursion-instant","label":"recursion-instant","n":13},{"slug":"reanimate","label":"reanimate","n":11},{"slug":"recursion-sorcery","label":"recursion-sorcery","n":11},{"slug":"recursion-artifact","label":"recursion-artifact","n":2}],"siblings":[]},"reanimate":{"slug":"reanimate","label":"reanimate","n":11,"parents":[{"slug":"recursion","label":"recursion","n":0}],"children":[{"slug":"reanimate-creature","label":"reanimate-creature","n":559},{"slug":"reanimate-self","label":"reanimate-self","n":277},{"slug":"reanimate-cast","label":"reanimate-cast","n":151},{"slug":"reanimate-artifact","label":"reanimate-artifact","n":74},{"slug":"reanimate-permanent","label":"reanimate-permanent","n":62},{"slug":"reanimate-land","label":"reanimate-land","n":52},{"slug":"reanimate-from-opponent","label":"reanimate-from-opponent","n":50},{"slug":"reanimate-enchantment","label":"reanimate-enchantment","n":34},{"slug":"reanimate-nonland","label":"reanimate-nonland","n":25},{"slug":"reanimate-aura","label":"reanimate-aura","n":21}],"siblings":[{"slug":"gives-castable-from-graveyard","label":"gives castable from graveyard","n":116},{"slug":"copy-from-graveyard","label":"copy from graveyard","n":50},{"slug":"demilich-effect","label":"demilich effect","n":37},{"slug":"regrowth","label":"regrowth","n":36},{"slug":"impulsive-recursion","label":"impulsive recursion","n":21},{"slug":"grim-return","label":"grim return","n":15},{"slug":"recursion-instant","label":"recursion-instant","n":13},{"slug":"recursion-sorcery","label":"recursion-sorcery","n":11}]},"copy":{"slug":"copy","label":"copy","n":7,"parents":[],"children":[{"slug":"copy-creature","label":"copy-creature","n":364},{"slug":"copy-self","label":"copy-self","n":314},{"slug":"copy-instant","label":"copy-instant","n":161},{"slug":"copy-sorcery","label":"copy-sorcery","n":156},{"slug":"copy-spell","label":"copy-spell","n":155},{"slug":"shapesharing","label":"shapesharing","n":72},{"slug":"copy-artifact","label":"copy-artifact","n":71},{"slug":"clone","label":"clone","n":64},{"slug":"copy-token","label":"copy-token","n":56},{"slug":"copy-legendary","label":"copy-legendary","n":51}],"siblings":[]},"death-trigger":{"slug":"death-trigger","label":"death trigger","n":593,"parents":[{"slug":"triggered-ability","label":"triggered ability","n":7961}],"children":[{"slug":"death-trigger-self","label":"death trigger-self","n":712},{"slug":"death-trigger-opponent","label":"death trigger opponent","n":74},{"slug":"blood-artist-ability","label":"blood artist ability","n":41},{"slug":"hunger-trigger","label":"hunger trigger","n":10},{"slug":"gives-persist","label":"gives persist","n":7}],"siblings":[{"slug":"intervening-if-clause","label":"intervening if clause","n":2207},{"slug":"attack-trigger","label":"attack trigger","n":2077},{"slug":"delayed-trigger","label":"delayed trigger","n":1132},{"slug":"block-trigger","label":"block trigger","n":422},{"slug":"reflexive-trigger","label":"reflexive trigger","n":317},{"slug":"ward","label":"ward","n":168},{"slug":"cast-trigger","label":"cast trigger","n":148},{"slug":"trigger-from-graveyard","label":"trigger from graveyard","n":147}]},"cast-trigger":{"slug":"cast-trigger","label":"cast trigger","n":148,"parents":[{"slug":"triggered-ability","label":"triggered ability","n":7961}],"children":[{"slug":"cast-trigger-you","label":"cast trigger-you","n":1320},{"slug":"cast-trigger-self","label":"cast trigger-self","n":253},{"slug":"cast-trigger-other","label":"cast trigger-other","n":128},{"slug":"mana-gorger","label":"mana gorger","n":14}],"siblings":[{"slug":"intervening-if-clause","label":"intervening if clause","n":2207},{"slug":"attack-trigger","label":"attack trigger","n":2077},{"slug":"delayed-trigger","label":"delayed trigger","n":1132},{"slug":"death-trigger","label":"death trigger","n":593},{"slug":"block-trigger","label":"block trigger","n":422},{"slug":"reflexive-trigger","label":"reflexive trigger","n":317},{"slug":"ward","label":"ward","n":168},{"slug":"trigger-from-graveyard","label":"trigger from graveyard","n":147}]},"group-hug":{"slug":"group-hug","label":"group hug","n":190,"parents":[],"children":[{"slug":"selective-group-hug","label":"selective group hug","n":221},{"slug":"bribery","label":"bribery","n":32}],"siblings":[]},"monarch-matters":{"slug":"monarch-matters","label":"monarch matters","n":49,"parents":[],"children":[],"siblings":[]},"take-the-initiative":{"slug":"take-the-initiative","label":"take the initiative","n":23,"parents":[{"slug":"tutor-land-basic","label":"tutor-land-basic","n":357},{"slug":"tutor-to-hand","label":"tutor-to-hand","n":575},{"slug":"gives-pp-counters","label":"gives pp counters","n":1384},{"slug":"scry","label":"scry","n":286}],"children":[],"siblings":[{"slug":"gives-pp-counters-to-all","label":"gives pp counters to all","n":207},{"slug":"repeatable-scry","label":"repeatable scry","n":185},{"slug":"support","label":"support","n":64},{"slug":"pwdeck-tutor","label":"pwdeck-tutor","n":36},{"slug":"earthbend","label":"earthbend","n":36},{"slug":"tutor-land-basic-plains","label":"tutor-land-basic-plains","n":33},{"slug":"tutor-land-basic-forest","label":"tutor-land-basic-forest","n":27},{"slug":"tutor-land-basic-mountain","label":"tutor-land-basic-mountain","n":17}]},"the-ring-tempts-you":{"slug":"the-ring-tempts-you","label":"the ring tempts you","n":49,"parents":[{"slug":"gives-skulk","label":"gives skulk","n":9},{"slug":"legendify","label":"legendify","n":12}],"children":[],"siblings":[]},"extra-turn":{"slug":"extra-turn","label":"extra turn","n":64,"parents":[{"slug":"blue-effect","label":"blue effect","n":0}],"children":[],"siblings":[{"slug":"removal-bounce","label":"removal-bounce","n":346},{"slug":"loot","label":"loot","n":121},{"slug":"counterspell","label":"counterspell","n":98},{"slug":"loot-to-library","label":"loot to library","n":10}]},"poisonous":{"slug":"poisonous","label":"poisonous","n":131,"parents":[{"slug":"poison-mechanics","label":"poison mechanics","n":11}],"children":[],"siblings":[{"slug":"synergy-poison","label":"synergy-poison","n":42},{"slug":"poison-opponents","label":"poison opponents","n":21},{"slug":"gives-toxic","label":"gives toxic","n":9},{"slug":"gives-infect","label":"gives infect","n":8},{"slug":"gives-poisonous","label":"gives poisonous","n":6},{"slug":"gains-infect","label":"gains infect","n":4},{"slug":"gains-toxic","label":"gains toxic","n":2},{"slug":"removes-infect","label":"removes infect","n":1}]},"combat-trick":{"slug":"combat-trick","label":"combat trick","n":1104,"parents":[],"children":[{"slug":"giant-growth","label":"giant growth","n":169}],"siblings":[]},"protection":{"slug":"protection","label":"protection","n":0,"parents":[],"children":[{"slug":"protects-creature","label":"protects-creature","n":781},{"slug":"protects-all","label":"protects-all","n":293},{"slug":"gives-indestructible","label":"gives indestructible","n":287},{"slug":"gives-hexproof","label":"gives hexproof","n":168},{"slug":"gives-protection","label":"gives protection","n":127},{"slug":"protects-planeswalker","label":"protects-planeswalker","n":102},{"slug":"gives-ward","label":"gives ward","n":71},{"slug":"protects-artifact","label":"protects-artifact","n":65},{"slug":"gains-hexproof","label":"gains hexproof","n":63},{"slug":"gives-shroud","label":"gives shroud","n":49}],"siblings":[]},"phase-manipulation":{"slug":"phase-manipulation","label":"phase manipulation","n":15,"parents":[],"children":[{"slug":"extra-combat-phase","label":"extra combat phase","n":54},{"slug":"skip-draw-step","label":"skip draw step","n":20},{"slug":"skip-untap-step","label":"skip untap step","n":11},{"slug":"extra-upkeep","label":"extra upkeep","n":7},{"slug":"extra-draw-step","label":"extra draw step","n":4}],"siblings":[]}};
 
     const KEYWORD_BUCKETS = {
       "Evasion": [
@@ -1200,6 +1222,8 @@
       tree: { id: "root", kind: "group", op: null, not: false, children: [] },
       focusId: "root",
       builderOpen: false,
+      lineageSlug: null,
+      lineageOpen: {},
     };
     let treeSeq = 1;
     function nextTreeId() { return "n" + (treeSeq++); }
@@ -1509,10 +1533,32 @@
       applyCmcWindow(n, n);
     }
 
+    function pruneEmptyGroups() {
+      walkTree(state.tree, (n) => {
+        if (n.kind === "group" && n.children && n.children.length) n.filled = true;
+      });
+      let changed = true;
+      while (changed) {
+        changed = false;
+        const ids = [];
+        walkTree(state.tree, (n, parent) => {
+          if (parent && n.kind === "group" && n.filled && !(n.children && n.children.length)) ids.push(n.id);
+        });
+        ids.forEach((id) => {
+          const parent = parentOf(id);
+          if (!parent) return;
+          parent.children = parent.children.filter((ch) => ch.id !== id);
+          changed = true;
+        });
+      }
+      if (state.focusId !== "root" && !findNode(state.focusId)) state.focusId = "root";
+    }
     function updatePreview() {
+      pruneEmptyGroups();
       queryPreview.textContent = buildQuery();
       renderBuilder();
       paintTypePalette();
+      renderLineage();
     }
 
     document.querySelectorAll("#colors .mana").forEach((btn) => {
@@ -1553,10 +1599,180 @@
       });
     }
 
+    function otagSlug(query) {
+      const m = String(query || "").trim().match(/^otag:"?([^"]+)"?$/i);
+      return m ? m[1].toLowerCase() : null;
+    }
+    function tagTitle(slug) {
+      const g = TAG_GRAPH[slug];
+      if (g && g.label) return g.label;
+      return String(slug || "").replace(/-/g, " ");
+    }
+    function selectedOtagTags() {
+      const seen = new Set();
+      const out = [];
+      function consider(query, label) {
+        const slug = otagSlug(query);
+        if (!slug || !TAG_GRAPH[slug] || seen.has(slug)) return;
+        seen.add(slug);
+        out.push({ slug, label: label || tagTitle(slug), query: "otag:" + slug });
+      }
+      state.parts.forEach((p) => consider(p.query, p.label));
+      treeLeaves().forEach((n) => consider(n.query, n.label));
+      return out;
+    }
+    function ensurePart(label, query, source) {
+      if (!state.parts.some((p) => p.query === query)) {
+        state.parts.push({ id: nextTreeId(), label, query, source: source || "role" });
+      }
+    }
+    function ensureExprLeaf(label, query, source, fromSlug) {
+      const box = focusedContainer();
+      if (box.children.some((ch) => ch.kind === "leaf" && ch.query === query)) return;
+      box.children.push({
+        id: nextTreeId(),
+        kind: "leaf",
+        label,
+        query,
+        source: source || "role",
+        fromSlug: fromSlug || null,
+        not: false
+      });
+    }
+    function removeLineageFromTree(fromSlug) {
+      if (!fromSlug) return;
+      const ids = [];
+      walkTree(state.tree, (n, parent) => {
+        if (parent && n.kind === "leaf" && n.fromSlug === fromSlug) ids.push(n.id);
+      });
+      ids.forEach((id) => {
+        const parent = parentOf(id);
+        if (parent) parent.children = parent.children.filter((ch) => ch.id !== id);
+      });
+    }
+    function addTagToExpression(fromSlug, slug) {
+      const q = "otag:" + slug;
+      ensureExprLeaf(tagTitle(slug), q, "role", fromSlug);
+      state.lineageSlug = slug;
+      if (!state.lineageOpen) state.lineageOpen = {};
+      state.lineageOpen[fromSlug] = state.lineageOpen[fromSlug] || false;
+      state.lineageOpen[slug] = state.lineageOpen[slug] || false;
+      renderKeywords();
+      updatePreview();
+    }
+    function renderLineage() {
+      const el = $("tagLineage");
+      if (!el) return;
+      const tags = selectedOtagTags();
+      if (!tags.length) {
+        el.hidden = true;
+        el.innerHTML = "";
+        return;
+      }
+      el.innerHTML = "";
+      if (!state.lineageOpen) state.lineageOpen = {};
+      tags.forEach((item) => {
+        const tag = TAG_GRAPH[item.slug];
+        const hasRelated = (tag.parents && tag.parents.length) || (tag.children && tag.children.length) || (tag.siblings && tag.siblings.length);
+        if (!hasRelated) return;
+        const box = document.createElement("details");
+        box.className = "tag-box";
+        const open = !!state.lineageOpen[item.slug];
+        box.open = !!open;
+        box.addEventListener("toggle", () => {
+          state.lineageOpen[item.slug] = box.open;
+        });
+        const sum = document.createElement("summary");
+        sum.textContent = item.label;
+        box.appendChild(sum);
+        const body = document.createElement("div");
+        body.className = "tag-box-body";
+        if (tag.parents && tag.parents.length) {
+          const row = document.createElement("div");
+          row.appendChild(document.createTextNode("In "));
+          tag.parents.forEach((p) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = tagTitle(p.slug);
+            btn.title = "Add otag:" + p.slug + " to the expression";
+            btn.addEventListener("click", () => addTagToExpression(item.slug, p.slug));
+            row.appendChild(btn);
+          });
+          body.appendChild(row);
+        }
+        const related = tag.children && tag.children.length ? tag.children : (tag.siblings || []);
+        const relatedLabel = tag.children && tag.children.length ? "Includes " : "Siblings ";
+        if (related.length) {
+          const row = document.createElement("div");
+          row.appendChild(document.createTextNode(relatedLabel));
+          related.forEach((c) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = tagTitle(c.slug);
+            btn.title = "Add otag:" + c.slug + " to the expression";
+            btn.addEventListener("click", () => addTagToExpression(item.slug, c.slug));
+            row.appendChild(btn);
+          });
+          body.appendChild(row);
+        }
+        box.appendChild(body);
+        el.appendChild(box);
+      });
+      el.hidden = !el.children.length;
+    }
+    function wrapRootWithAndLeaf(leaf) {
+      const kids = state.tree.children;
+      const alreadyBoxed = kids.length === 1 && kids[0].kind === "group";
+      if (alreadyBoxed || state.tree.op === "and") {
+        state.tree.op = "and";
+        state.tree.children.push(leaf);
+        state.focusId = "root";
+        return;
+      }
+      const inner = {
+        id: nextTreeId(),
+        kind: "group",
+        op: state.tree.op,
+        not: state.tree.not,
+        children: kids
+      };
+      state.tree.op = "and";
+      state.tree.not = false;
+      state.tree.children = [leaf, inner];
+      state.focusId = "root";
+    }
+    function removeQueryFromTree(query) {
+      walkTree(state.tree, (n, parent) => {
+        if (!parent || n.kind !== "leaf" || n.query !== query) return;
+        parent.children = parent.children.filter((ch) => ch.id !== n.id);
+      });
+    }
     function togglePaletteLeaf({ label, query, source }) {
       const idx = state.parts.findIndex((p) => p.query === query);
-      if (idx >= 0) state.parts.splice(idx, 1);
-      else state.parts.push({ id: nextTreeId(), label, query, source });
+      if (idx >= 0) {
+        state.parts.splice(idx, 1);
+        if (source === "type") removeQueryFromTree(query);
+        const gone = otagSlug(query);
+        if (gone) removeLineageFromTree(gone);
+      } else {
+        state.parts.push({ id: nextTreeId(), label, query, source });
+        if (source === "type" && expressionIsSetup() && !treeLeaves().some((n) => n.query === query)) {
+          wrapRootWithAndLeaf({
+            id: nextTreeId(),
+            kind: "leaf",
+            label,
+            query,
+            source,
+            not: false
+          });
+        }
+      }
+      const slug = otagSlug(query);
+      state.lineageSlug = slug || state.lineageSlug;
+      if (slug) {
+        if (!state.lineageOpen) state.lineageOpen = {};
+        if (state.lineageOpen[slug] == null) state.lineageOpen[slug] = false;
+      }
       renderKeywords();
       updatePreview();
     }
@@ -1726,12 +1942,6 @@
       const parent = parentOf(node.id);
       if (!parent) return;
       parent.children = parent.children.filter((ch) => ch.id !== node.id);
-      walkTree(node, (n) => {
-        if (n.kind !== "leaf") return;
-        if (!state.parts.some((p) => p.query === n.query)) {
-          state.parts.push({ id: nextTreeId(), label: n.label, query: n.query, source: n.source });
-        }
-      });
       state.focusId = parent.id;
       renderKeywords();
       updatePreview();
@@ -2334,6 +2544,8 @@
       state.tree = { id: "root", kind: "group", op: null, not: false, children: [] };
       state.parts = [];
       state.focusId = "root";
+      state.lineageSlug = null;
+      state.lineageOpen = {};
       state.kwOpen = null;
       state.kwMode = "and";
       state.idMode = "identity";
