@@ -314,6 +314,38 @@
     .mana[data-c="C"].on { box-shadow: 0 0 0 2px var(--c); }
 
     .types, .keywords { display: flex; flex-wrap: wrap; gap: 8px; }
+    .subtype-label { display:block; margin-top:10px; }
+    .extra-box {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      background: transparent;
+    }
+    .extra-box > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      list-style: none;
+      padding: 0 0 8px;
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .extra-box > summary::-webkit-details-marker { display: none; }
+    .extra-box > summary::after {
+      content: "▸";
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .extra-box[open] > summary::after { content: "▾"; }
+    .extra-chips { padding: 0; }
     .chip {
       min-height: 36px;
       padding: 8px 12px;
@@ -339,6 +371,25 @@
         0 0 24px color-mix(in srgb, var(--danger) 22%, transparent);
     }
 
+    .sec-kw #kwSearch { margin-top: 8px; margin-bottom: 10px; }
+    .kw-results { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .kw-hit-group {
+      width: 100%;
+      font-size: 0.64rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 6px 0 2px;
+    }
+    .chip .kw-why {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 400;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
     .kw-list { display: grid; gap: 10px; }
     .kw-pads {
       display: flex;
@@ -490,6 +541,11 @@
       -webkit-touch-callout: none;
     }
     body.builder-dragging { overflow: hidden; overscroll-behavior: none; }
+    html.sheet-open, body.sheet-open {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    body.sheet-open .rail { overflow: hidden; }
     .leaf {
       display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
       background:var(--raised); color:var(--text); border-radius:999px;
@@ -559,17 +615,46 @@
     }
     .view-opts select { width: 100%; min-width: 0; }
 
+    .row-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--raised) 88%, #000);
+      border: 1px solid var(--line);
+    }
+    .row-toggle button {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+    .row-toggle button.on {
+      background: color-mix(in srgb, var(--text) 16%, var(--raised));
+      color: var(--text);
+    }
     .results {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+    .results[data-cols="1"] { grid-template-columns: 1fr; }
+    .results[data-cols="2"] { grid-template-columns: 1fr 1fr; }
+    .results[data-cols="3"] { grid-template-columns: 1fr 1fr 1fr; }
     .card {
+      position: relative;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 10px;
       overflow: hidden;
     }
+    .card-art { position: relative; display: block; }
     .card img {
       width: 100%;
       aspect-ratio: 488 / 680;
@@ -577,8 +662,31 @@
       background: #111;
       display: block;
     }
+    .flip-btn {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      z-index: 1;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 86%, #000);
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1;
+    }
     .meta { padding: 7px 8px 9px; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
     .name { font-size: 0.8rem; font-weight: 650; line-height: 1.25; }
+    .price { font-size: 0.74rem; font-weight: 650; color: var(--accent-2, var(--text)); white-space: nowrap; }
+    .price.none { color: var(--muted); font-weight: 400; }
     .type { color: var(--muted); font-size: 0.7rem; margin-top: 2px; }
     .empty {
       grid-column: 1 / -1;
@@ -632,16 +740,18 @@
       transition: transform 0.2s ease;
     }
     .kw-sheet-card.dragging { transition: none; }
-    .kw-sheet-bar {
+    .kw-sheet-head {
       position: sticky;
       top: 0;
-      z-index: 1;
+      z-index: 2;
+      background: var(--panel);
+    }
+    .kw-sheet-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      padding: 10px 0 12px;
-      background: var(--panel);
+      padding: 4px 0 12px;
     }
     .kw-sheet-bar h2 {
       margin: 0;
@@ -682,6 +792,38 @@
       background: var(--line);
     }
 
+    .to-top {
+      display: none;
+    }
+    @media (max-width: 900px) {
+      .to-top {
+        display: grid;
+        place-items: center;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 40;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        font-size: 1.1rem;
+        box-shadow: 0 8px 24px #0008;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+      .to-top.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+      body.sheet-open .to-top { opacity: 0; pointer-events: none; }
+    }
     @media (max-width: 900px) {
       .app { grid-template-columns: 1fr; }
       .rail {
@@ -715,7 +857,7 @@
         grid-template-areas:
           "brand brand brand brand"
           "id type cmc actions"
-          "sub kw kw kw"
+          "kw kw kw kw"
           "builder builder builder builder"
           "query query query query";
         gap: 12px 16px;
@@ -745,7 +887,6 @@
       .sec-cmc { grid-area: cmc; }
       .cmc-slider { display: none; }
       .cmc-desk { display: grid; gap: 8px; }
-      .sec-sub { grid-area: sub; }
       .sec-kw { grid-area: kw; }
       .builder { grid-area: builder; margin-bottom: 0; }
       .actions {
@@ -780,10 +921,7 @@
       }
       .topbar { margin-bottom: 20px; }
       .status { font-size: 0.95rem; }
-      .results {
-        grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-        gap: 16px;
-      }
+      .results { gap: 16px; }
       .card { border-radius: 12px; }
       .meta { padding: 10px 11px 12px; }
       .name { font-size: 0.88rem; }
@@ -803,10 +941,7 @@
         gap: 14px 18px;
       }
       .stage { padding: 28px 40px 80px; }
-      .results {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 18px;
-      }
+      .results { gap: 18px; }
     }
 
     @media (hover: hover) and (min-width: 901px) {
@@ -872,6 +1007,47 @@
           <button class="chip" data-t="land">Land</button>
           <button class="chip" data-t="legendary">Legendary</button>
         </div>
+        <label class="field subtype-label" for="subtypeQuery">Subtype</label>
+        <input id="subtypeQuery" type="text" placeholder="elf, -human, aura" autocomplete="off" spellcheck="false" />
+        <details class="extra-box">
+          <summary>Traits</summary>
+          <div class="types extra-chips" id="isFlags">
+            <button class="chip" data-is="mdfc">MDFC</button>
+            <button class="chip" data-is="dfc">DFC</button>
+            <button class="chip" data-is="transform">Transform</button>
+            <button class="chip" data-is="split">Split</button>
+            <button class="chip" data-is="flip">Flip</button>
+            <button class="chip" data-is="adventure">Adventure</button>
+            <button class="chip" data-is="modal">Modal</button>
+            <button class="chip" data-is="historic">Historic</button>
+            <button class="chip" data-is="permanent">Permanent</button>
+            <button class="chip" data-is="spell">Spell</button>
+            <button class="chip" data-is="vanilla">Vanilla</button>
+            <button class="chip" data-is="frenchvanilla">French vanilla</button>
+            <button class="chip" data-is="hybrid">Hybrid</button>
+            <button class="chip" data-is="phyrexian">Phyrexian</button>
+            <button class="chip" data-is="party">Party</button>
+            <button class="chip" data-is="companion">Companion</button>
+          </div>
+        </details>
+        <details class="extra-box">
+          <summary>Layout</summary>
+          <div class="types extra-chips" id="layouts">
+            <button class="chip" data-layout="modal_dfc">Modal DFC</button>
+            <button class="chip" data-layout="transform">Transform</button>
+            <button class="chip" data-layout="split">Split</button>
+            <button class="chip" data-layout="flip">Flip</button>
+            <button class="chip" data-layout="adventure">Adventure</button>
+            <button class="chip" data-layout="saga">Saga</button>
+            <button class="chip" data-layout="class">Class</button>
+            <button class="chip" data-layout="case">Case</button>
+            <button class="chip" data-layout="leveler">Leveler</button>
+            <button class="chip" data-layout="meld">Meld</button>
+            <button class="chip" data-layout="prototype">Prototype</button>
+            <button class="chip" data-layout="mutate">Mutate</button>
+            <button class="chip" data-layout="reversible_card">Reversible</button>
+          </div>
+        </details>
       </section>
 
       <section class="sec sec-cmc">
@@ -898,11 +1074,6 @@
         </div>
       </section>
 
-      <section class="sec sec-sub">
-        <label class="field" for="subtypeQuery">Subtype</label>
-        <input id="subtypeQuery" type="text" placeholder="elf, -human, aura" autocomplete="off" spellcheck="false" />
-      </section>
-
       <section class="sec sec-kw">
         <div class="field-row">
           <label class="field">Keywords &amp; roles</label>
@@ -911,6 +1082,7 @@
             <span data-kw-mode="or">Any</span>
           </button>
         </div>
+        <input id="kwSearch" type="text" placeholder="Search roles, keywords, and related tags" autocomplete="off" spellcheck="false" />
         <div class="kw-list" id="keywords"></div>
       </section>
 
@@ -965,8 +1137,13 @@
     <main class="stage">
       <div class="topbar">
         <div class="status" id="status">Set filters, then search.</div>
+        <div class="row-toggle" id="rowToggle" role="radiogroup" aria-label="Cards per row">
+          <button type="button" data-cols="1" aria-label="One card per row">1</button>
+          <button type="button" data-cols="2" aria-label="Two cards per row" class="on">2</button>
+          <button type="button" data-cols="3" aria-label="Three cards per row">3</button>
+        </div>
       </div>
-      <div class="results" id="results"></div>
+      <div class="results" id="results" data-cols="2"></div>
       <div class="more-wrap">
         <button id="moreBtn" hidden>Load more</button>
       </div>
@@ -974,13 +1151,17 @@
     </main>
   </div>
 
+  <button type="button" class="to-top" id="toTop" hidden aria-label="Back to top">↑</button>
+
   <div class="kw-sheet" id="kwSheet" hidden>
     <div class="kw-sheet-back" id="kwSheetBack"></div>
     <div class="kw-sheet-card" role="dialog" aria-modal="true" aria-labelledby="kwSheetTitle">
+      <div class="kw-sheet-head">
       <div class="kw-sheet-handle"></div>
       <div class="kw-sheet-bar">
         <h2 id="kwSheetTitle">Roles</h2>
         <button type="button" class="kw-sheet-close" id="kwSheetClose" aria-label="Close">×</button>
+      </div>
       </div>
       <div class="keywords" id="kwSheetBody"></div>
     </div>
@@ -991,7 +1172,7 @@
     const ALL_COLORS = [...COLORS, "C"];
     const CMC_MAX = 15;
     const ROLE_ITEMS = {
-      "Mana": [
+      "Ramp": [
         ["Ramp", "otag:ramp"],
         ["Mana rock", "otag:mana-rock"],
         ["Mana dork", "otag:mana-dork"],
@@ -1002,22 +1183,23 @@
       "Combat": [
         ["Extra combat", "otag:extra-combat-phase"],
         ["Anthem", "otag:anthem"],
-        ["Unblockable", "otag:unblockable"],
         ["Attacks trigger", "otag:attack-trigger"],
-        ["Fight", "otag:removal-fight"],
-        ["Fog", "otag:fog"],
         ["Overrun", "otag:overrun"],
-        ["Goad", "kw:goad"],
+      ],
+      "Evasion": [
+        ["Unblockable", "otag:unblockable"],
       ],
       "Protection": [
         ["Pillowfort", "otag:pillowfort"],
+        ["Fog", "otag:fog"],
         ["Grant hexproof", "otag:gives-hexproof"],
         ["Grant indestructible", "otag:gives-indestructible"],
       ],
-      "Interaction": [
+      "Removal": [
         ["Board wipe", "otag:sweeper"],
         ["Spot removal", "otag:removal-creature"],
         ["Edict", "otag:removal-sacrifice"],
+        ["Fight", "otag:removal-fight"],
         ["Burn", "otag:burn"],
         ["Counterspell", "otag:counterspell"],
         ["Stifle", "otag:counterspell-ability"],
@@ -1029,41 +1211,49 @@
         ["Land destruction", "otag:removal-land"],
         ["Graveyard hate", "otag:hate-graveyard"],
         ["Hand hate", "otag:hate-discard"],
-        ["Stax", "otag:tax"],
+        ["Discard", "otag:discard"],
       ],
-      "Synergy": [
-        ["Sac outlet", "otag:sacrifice-outlet-creature"],
-        ["Blink", "otag:flicker"],
-        ["Clone", "otag:clone"],
-        ["Lifegain", "otag:lifegain"],
-        ["Drain", "otag:drain-life"],
-      ],
-      "Card flow": [
+      "Card Draw": [
         ["Draw", "otag:draw"],
         ["Cantrip", "otag:cantrip"],
         ["Loot", "otag:loot"],
         ["Impulse", "otag:impulse"],
         ["Wheel", "otag:wheel"],
-        ["Discard", "otag:discard"],
-        ["Mill", "otag:mill"],
-        ["Self-mill", "otag:mill-self"],
         ["Scry", "kw:scry"],
         ["Surveil", "kw:surveil"],
-        ["Tutor", "otag:tutor"],
-        ["Recursion", "otag:recursion"],
-        ["Reanimate", "otag:reanimate"],
-      ],
-      "Engines": [
-        ["Copy", "otag:copy"],
-        ["Dies", "otag:death-trigger"],
-        ["Cast trigger", "otag:cast-trigger"],
-        ["Proliferate", "kw:proliferate"],
-        ["Food", "kw:food"],
         ["Clue", "kw:clue"],
         ["Blood", "kw:blood"],
       ],
+      "Tutors": [
+        ["Tutor", "otag:tutor"],
+      ],
+      "Graveyard": [
+        ["Sac outlet", "otag:sacrifice-outlet-creature"],
+        ["Mill", "otag:mill"],
+        ["Self-mill", "otag:mill-self"],
+        ["Dies", "otag:death-trigger"],
+      ],
+      "Recursion": [
+        ["Recursion", "otag:recursion"],
+        ["Reanimate", "otag:reanimate"],
+        ["Blink", "otag:flicker"],
+      ],
+      "Life": [
+        ["Lifegain", "otag:lifegain"],
+        ["Drain", "otag:drain-life"],
+        ["Food", "kw:food"],
+      ],
+      "Cast": [
+        ["Cast trigger", "otag:cast-trigger"],
+      ],
+      "Copy": [
+        ["Copy", "otag:copy"],
+        ["Clone", "otag:clone"],
+      ],
       "Politics": [
         ["Group hug", "otag:group-hug"],
+        ["Goad", "kw:goad"],
+        ["Stax", "otag:tax"],
         ["Monarch", "otag:monarch-matters"],
         ["Initiative", "otag:take-the-initiative"],
         ["The Ring", "otag:the-ring-tempts-you"],
@@ -1077,17 +1267,22 @@
 
     const KEYWORD_BUCKETS = {
       "Evasion": [
-        "Flying","Reach","Menace","Shadow","Skulk","Fear","Intimidate","Horsemanship",
+        "Flying","Menace","Shadow","Skulk","Fear","Intimidate","Horsemanship",
         "Landwalk","Forestwalk","Islandwalk","Mountainwalk","Swampwalk","Plainswalk",
         "Desertwalk","Nonbasic landwalk","Legendary landwalk"
       ],
       "Combat": [
-        "Trample","Haste","Vigilance","Deathtouch","Lifelink","First strike","Double strike",
-        "Defender","Prowess","Flanking","Bushido","Exalted","Battle Cry","Melee","Mentor",
-        "Training","Enlist","Provoke","Banding","Double team","Frenzy","Afflict","Rampage",
-        "Power-up","Riot","Unleash","Boast","Decayed","Dethrone","Max speed","Toxic","Infect",
-        "Wither","Poisonous","Annihilator","Crew","Saddle","Station","Encore","Ninjutsu",
-        "Commander ninjutsu","Dash","Blitz","Prowl","Sneak","Web-slinging"
+        "Trample","Haste","Vigilance","Deathtouch","First strike","Double strike",
+        "Defender","Reach","Prowess","Flanking","Bushido","Exalted","Battle Cry","Melee",
+        "Enlist","Provoke","Banding","Frenzy","Afflict","Rampage",
+        "Power-up","Riot","Boast","Dethrone","Max speed",
+        "Ninjutsu","Commander ninjutsu","Dash","Blitz","Prowl","Sneak","Web-slinging",
+        "Awaken","Soulbond","Tribute","Mobilize","Exhaust"
+      ],
+      "Counters": [
+        "Proliferate","Increment","Teamwork","Graft","Evolve","Bloodthirst","Renown",
+        "Ravenous","Outlast","Backup","Fabricate","Mentor","Training","Unleash","Wither",
+        "Amplify","Level Up","Reinforce","Sunburst","Modular"
       ],
       "Protection": [
         "Hexproof","Hexproof from","Shroud","Ward","Indestructible","Protection",
@@ -1098,65 +1293,88 @@
         "Foretell","Plot","Warp","Hideaway","Daybound","Nightbound","Impending",
         "Morph","Megamorph","Disguise","Miracle","Fuse","Entwine","Splice","Read Ahead"
       ],
-      "Mana": [
+      "Ramp": [
         "Affinity","Convoke","Delve","Improvise","Kicker","Multikicker","Emerge","Evoke",
         "Offering","Prototype","Compleated","Assist","Surge","Spectacle","Escalate",
         "Cumulative upkeep","Echo","Undaunted","Gift","Freerunning","Spree","Tiered",
-        "Extort","Firebending","Cleave"
+        "Cleave","Firebending"
       ],
       "Attachments": [
-        "Equip","Enchant","Fortify","Reconfigure","Bestow","Aura Swap"
+        "Equip","Enchant","Fortify","Reconfigure","Bestow","Aura Swap",
+        "Living weapon","Living metal","For Mirrodin!",
+        "Crew","Saddle","Station",
+        "More Than Meets the Eye","Job select","Craft"
       ],
-      "Interaction": [
-        "Overload"
+      "Removal": [
+        "Overload","Annihilator"
       ],
-      "Synergy": [
-        "Exploit","Bargain","Casualty","Devour"
-      ],
-      "Card flow": [
+      "Card Draw": [
         "Cycling","Typecycling","Landcycling","Basic landcycling","Plainscycling",
         "Islandcycling","Swampcycling","Mountaincycling","Forestcycling","Wizardcycling",
-        "Slivercycling","Halflingcycling","Jump-start","Flashback",
-        "Retrace","Buyback","Madness","Forecast","Transmute","Transfigure","Recover",
-        "Scavenge","Embalm","Eternalize","Unearth","Escape","Disturb","Aftermath",
-        "Harmonize","Mayhem","Dredge","Soulshift"
+        "Slivercycling","Halflingcycling","Buyback","Madness","Forecast",
+        "Cipher","Solved"
       ],
-      "Engines": [
-        "Living weapon","Living metal","Modular","Persist","Undying","Graft","Evolve",
-        "Bloodthirst","Renown","Ravenous","Outlast","Backup","Fabricate","Afterlife",
-        "Ripple","Replicate","Demonstrate","Myriad","Mutate","Craft","Offspring","Awaken",
-        "Squad","Champion","Changeling","Conspire","Soulbond","Ascend","Ingest","Tribute",
-        "Devoid","Augment","Haunt","For Mirrodin!","Specialize",
-        "More Than Meets the Eye","Intensity","Sunburst","Amplify","Level Up","Reinforce",
-        "Job select","Mobilize","Exhaust","Solved","Increment","Paradigm","Teamwork",
-        "Storied","Cipher","Visit","Space sculptor"
+      "Tutors": [
+        "Transmute","Transfigure"
+      ],
+      "Graveyard": [
+        "Dredge","Exploit","Bargain","Casualty","Devour","Ingest","Decayed"
+      ],
+      "Recursion": [
+        "Flashback","Jump-start","Retrace","Recover","Scavenge","Embalm","Eternalize",
+        "Unearth","Escape","Disturb","Aftermath","Harmonize","Mayhem","Soulshift",
+        "Encore","Persist","Undying","Afterlife","Haunt","Champion"
+      ],
+      "Life": [
+        "Lifelink","Extort"
+      ],
+      "Cast": [
+        "Cascade","Ripple","Paradigm"
+      ],
+      "Copy": [
+        "Replicate","Demonstrate","Conspire","Offspring","Myriad","Squad"
+      ],
+      "Thresholds": [
+        "Ascend","Storied","Threshold","Delirium","Metalcraft","Descend",
+        "Fathomless descent","Spell mastery","Domain","Converge","Chroma",
+        "Hellbent","Ferocious","Formidable","Coven","Corrupted","Celebration",
+        "Raid","Battalion","Pack tactics","Morbid","Undergrowth","Fateful hour"
       ],
       "Commander": [
         "Partner","Partner with","Friends forever","Doctor's companion","Choose a background",
-        "Companion","Hidden agenda","Double agenda"
+        "Companion"
       ],
       "Finishers": [
-        "Storm","Gravestorm","Epic","Cascade"
+        "Storm","Gravestorm","Epic","Infect","Toxic","Poisonous"
       ],
     };
 
     const GROUP_ORDER = [
-      "Mana",
-      "Combat",
-      "Evasion",
-      "Protection",
-      "Timing",
-      "Interaction",
-      "Synergy",
-      "Card flow",
-      "Engines",
-      "Politics",
-      "Attachments",
-      "Commander",
-      "Finishers",
       "Ability words",
+      "Attachments",
+      "Card Draw",
+      "Cast",
+      "Combat",
+      "Commander",
+      "Copy",
+      "Counters",
+      "Evasion",
+      "Finishers",
+      "Graveyard",
+      "Life",
+      "Politics",
+      "Protection",
+      "Ramp",
+      "Recursion",
+      "Removal",
+      "Thresholds",
+      "Timing",
+      "Tutors",
     ];
 
+    function titleWords(name) {
+      return String(name).replace(/[A-Za-z][A-Za-z']*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    }
     function kwQuery(name) {
       const key = String(name).toLowerCase();
       const quoted = /[\s\-!]/.test(key);
@@ -1173,15 +1391,28 @@
     function categorizeKeyword(name) {
       const key = String(name).toLowerCase();
       if (KEYWORD_CATEGORY[key]) return KEYWORD_CATEGORY[key];
-      if (key.includes("cycling")) return "Card flow";
+      if (key.includes("cycling")) return "Card Draw";
+      if (key.includes("transmute") || key.includes("tutor")) return "Tutors";
+      if (key.includes("overload") || key.includes("sweeper") || key.includes("wrath")) return "Removal";
+      if (key.includes("affinity") || key.includes("convoke") || key.includes("delve") || key.includes("kicker")) return "Ramp";
       if (key.includes("walk") || key.includes("flying") || key.includes("menace") || key.includes("skulk")) return "Evasion";
       if (key.includes("hexproof") || key.includes("protection") || key.includes("ward") || key.includes("shroud")) return "Protection";
       if (key.includes("flash") || key.includes("morph") || key.includes("bound") || key.includes("suspend") || key.includes("foretell") || key.includes("warp")) return "Timing";
       if (key.includes("partner") || key.includes("companion") || key.includes("background") || key.includes("agenda")) return "Commander";
       if (key.includes("equip") || key.includes("enchant") || key.includes("bestow") || key.includes("fortify")) return "Attachments";
-      if (key.includes("storm") || key.includes("epic") || key.includes("cascade")) return "Finishers";
-      if (key.includes("ninjutsu") || key.includes("crew") || key.includes("saddle") || key.includes("trample") || key.includes("haste")) return "Combat";
-      return "Engines";
+      if (key.includes("storm") || key.includes("epic")) return "Finishers";
+      if (key.includes("cascade") || key.includes("ripple") || key.includes("paradigm")) return "Cast";
+      if (key.includes("replicate") || key.includes("demonstrate") || key.includes("conspire")) return "Copy";
+      if (key.includes("threshold") || key.includes("delirium") || key.includes("ascend") || key.includes("storied") || key.includes("metalcraft") || key.includes("descend")) return "Thresholds";
+      if (key.includes("ninjutsu") || key.includes("trample") || key.includes("haste") || key.includes("reach") || key.includes("firebend")) return "Combat";
+      if (key.includes("infect") || key.includes("toxic") || key.includes("poison")) return "Finishers";
+      if (key.includes("proliferate") || key.includes("increment") || key.includes("graft") || key.includes("evolve") || key.includes("adapt") || key.includes("modular") || key.includes("mentor")) return "Counters";
+      if (key.includes("crew") || key.includes("saddle") || key.includes("station") || key.includes("mobilize")) return "Combat";
+      if (key.includes("encore") || key.includes("flashback") || key.includes("unearth") || key.includes("escape") || key.includes("persist") || key.includes("undying") || key.includes("aftermath")) return "Recursion";
+      if (key.includes("dredge")) return "Graveyard";
+      if (key.includes("extort") || key.includes("lifelink") || key.includes("lifegain")) return "Life";
+      if (key.includes("exploit") || key.includes("devour") || key.includes("casualty") || key.includes("bargain")) return "Graveyard";
+      return "Ability words";
     }
 
     function buildKeywordGroups() {
@@ -1198,11 +1429,12 @@
       });
       byLabel["Ability words"].items = [
         ["Landfall","kw:landfall"],["Magecraft","kw:magecraft"],["Constellation","kw:constellation"],
-        ["Morbid","kw:morbid"],["Metalcraft","kw:metalcraft"],["Threshold","kw:threshold"],
-        ["Delirium","kw:delirium"],["Raid","kw:raid"],["Battalion","kw:battalion"],["Revolt","kw:revolt"],
-        ["Eminence","kw:eminence"],["Undergrowth","kw:undergrowth"],["Coven","kw:coven"],
+        ["Revolt","kw:revolt"],["Eminence","kw:eminence"],
         ["Alliance","kw:alliance"],["Valiant","kw:valiant"],["Enrage","kw:enrage"],
+        ["Changeling","kw:changeling"],["Devoid","kw:devoid"],["Specialize","kw:specialize"],
+        ["Visit","kw:visit"],["Space Sculptor",'kw:"space sculptor"'],["Mutate","kw:mutate"],
       ];
+      groups.forEach((group) => group.items.sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: "base" })));
       return groups;
     }
 
@@ -1224,6 +1456,8 @@
       builderOpen: false,
       lineageSlug: null,
       lineageOpen: {},
+      kwSearch: "",
+      resultCols: 2,
     };
     let treeSeq = 1;
     function nextTreeId() { return "n" + (treeSeq++); }
@@ -1319,6 +1553,8 @@
     function typeQuery(t) {
       return String(t).includes(" ") ? 't:"' + t + '"' : "t:" + t;
     }
+    function isQuery(v) { return "is:" + String(v).toLowerCase(); }
+    function layoutQuery(v) { return "layout:" + String(v).toLowerCase(); }
     function walkTree(node, fn, parent) {
       fn(node, parent);
       if (node.kind === "group") node.children.forEach((ch) => walkTree(ch, fn, node));
@@ -1586,17 +1822,31 @@
         togglePaletteLeaf({ label: btn.dataset.label, query: typeQuery(btn.dataset.t), source: "type" });
       });
     });
-
-    function paintTypePalette() {
-      document.querySelectorAll("#types .chip").forEach((btn) => {
-        const query = typeQuery(btn.dataset.t);
-        const used = !!(findLeafByQuery(query) || state.parts.some((p) => p.query === query));
-        const base = btn.dataset.label || btn.textContent.replace(/^−/, "");
-        btn.textContent = base;
-        btn.classList.toggle("on", used);
-        btn.classList.toggle("exclude", false);
-        btn.setAttribute("aria-pressed", used ? "true" : "false");
+    document.querySelectorAll("#isFlags .chip").forEach((btn) => {
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.addEventListener("click", () => {
+        togglePaletteLeaf({ label: btn.dataset.label, query: isQuery(btn.dataset.is), source: "type" });
       });
+    });
+    document.querySelectorAll("#layouts .chip").forEach((btn) => {
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.addEventListener("click", () => {
+        togglePaletteLeaf({ label: btn.dataset.label, query: layoutQuery(btn.dataset.layout), source: "type" });
+      });
+    });
+
+    function paintChipQuery(btn, query) {
+      const used = !!(findLeafByQuery(query) || state.parts.some((p) => p.query === query));
+      const base = btn.dataset.label || btn.textContent.replace(/^−/, "");
+      btn.textContent = base;
+      btn.classList.toggle("on", used);
+      btn.classList.toggle("exclude", false);
+      btn.setAttribute("aria-pressed", used ? "true" : "false");
+    }
+    function paintTypePalette() {
+      document.querySelectorAll("#types .chip").forEach((btn) => paintChipQuery(btn, typeQuery(btn.dataset.t)));
+      document.querySelectorAll("#isFlags .chip").forEach((btn) => paintChipQuery(btn, isQuery(btn.dataset.is)));
+      document.querySelectorAll("#layouts .chip").forEach((btn) => paintChipQuery(btn, layoutQuery(btn.dataset.layout)));
     }
 
     function otagSlug(query) {
@@ -1782,6 +2032,59 @@
       return group.items.filter(([, q]) => queries.has(q)).length;
     }
 
+    function tagFamilyBits(slug) {
+      const g = TAG_GRAPH[slug];
+      const bits = [slug];
+      if (!g) return bits;
+      bits.push(g.slug, g.label);
+      (g.parents || []).forEach((x) => bits.push(x.slug, x.label));
+      (g.children || []).forEach((x) => bits.push(x.slug, x.label));
+      (g.siblings || []).forEach((x) => bits.push(x.slug, x.label));
+      return bits.filter(Boolean);
+    }
+    function matchingWhy(name, query, needle) {
+      if (!needle) return "";
+      if (name.toLowerCase().includes(needle)) return "";
+      if (String(query).toLowerCase().includes(needle)) return query;
+      const slug = otagSlug(query);
+      const bits = tagFamilyBits(slug);
+      const hit = bits.find((b) => String(b).toLowerCase().includes(needle));
+      return hit ? String(hit).replace(/-/g, " ") : "";
+    }
+    function searchKeywordHits(raw) {
+      const needle = String(raw || "").trim().toLowerCase();
+      if (!needle) return null;
+      const seen = new Set();
+      const groups = [];
+      KEYWORD_GROUPS.forEach((group) => {
+        const items = [];
+        group.items.forEach(([name, query]) => {
+          const blob = [name, query].concat(tagFamilyBits(otagSlug(query))).join(" ").toLowerCase();
+          if (!blob.includes(needle)) return;
+          if (seen.has(query)) return;
+          seen.add(query);
+          items.push({ name, query, why: matchingWhy(name, query, needle), source: query.startsWith("kw:") ? "kw" : "role" });
+        });
+        if (items.length) groups.push({ label: group.label, items });
+      });
+      const related = [];
+      const consider = [];
+      Object.values(TAG_GRAPH).forEach((g) => {
+        consider.push({ slug: g.slug, label: g.label });
+        (g.parents || []).concat(g.children || []).concat(g.siblings || []).forEach((x) => consider.push(x));
+      });
+      consider.forEach((x) => {
+        if (!x || !x.slug) return;
+        const q = "otag:" + x.slug;
+        if (seen.has(q)) return;
+        const blob = ((x.slug || "") + " " + (x.label || "")).toLowerCase();
+        if (!blob.includes(needle)) return;
+        seen.add(q);
+        related.push({ name: tagTitle(x.slug), query: q, why: "related tag", source: "role" });
+      });
+      related.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+      return { groups, related, needle };
+    }
     function renderKeywords() {
       const root = $("keywords");
       root.innerHTML = "";
@@ -1834,6 +2137,7 @@
             sheet.hidden = true;
           }
           paintPads();
+          syncSheetLock();
           return;
         }
         if (mobile && sheet) {
@@ -1852,6 +2156,7 @@
           fillChipRow(row, group);
         }
         paintPads();
+        syncSheetLock();
       }
 
       KEYWORD_GROUPS.forEach((group) => {
@@ -1873,6 +2178,60 @@
         pads.appendChild(btn);
       });
 
+      const hits = searchKeywordHits(state.kwSearch);
+      if (hits) {
+        const box = document.createElement("div");
+        box.className = "kw-results";
+        if (!hits.groups.length && !hits.related.length) {
+          const empty = document.createElement("div");
+          empty.className = "expr-empty";
+          empty.textContent = "No roles, keywords, or related tags match “" + hits.needle + "”.";
+          box.appendChild(empty);
+        } else {
+          hits.groups.forEach((group) => {
+            const h = document.createElement("div");
+            h.className = "kw-hit-group";
+            h.textContent = group.label;
+            box.appendChild(h);
+            group.items.forEach((item) => {
+              const btn = document.createElement("button");
+              const used = !!(findLeafByQuery(item.query) || state.parts.some((p) => p.query === item.query));
+              btn.className = "chip" + (used ? " on" : "");
+              btn.type = "button";
+              btn.appendChild(document.createTextNode(item.name));
+              if (item.why) {
+                const why = document.createElement("span");
+                why.className = "kw-why";
+                why.textContent = item.why;
+                btn.appendChild(why);
+              }
+              btn.addEventListener("click", () => {
+                togglePaletteLeaf({ label: item.name, query: item.query, source: item.source === "kw" ? "role" : "role" });
+              });
+              box.appendChild(btn);
+            });
+          });
+          if (hits.related.length) {
+            const h = document.createElement("div");
+            h.className = "kw-hit-group";
+            h.textContent = "Related tags";
+            box.appendChild(h);
+            hits.related.forEach((item) => {
+              const btn = document.createElement("button");
+              const used = !!(findLeafByQuery(item.query) || state.parts.some((p) => p.query === item.query));
+              btn.className = "chip" + (used ? " on" : "");
+              btn.type = "button";
+              btn.textContent = item.name;
+              btn.addEventListener("click", () => {
+                togglePaletteLeaf({ label: item.name, query: item.query, source: "role" });
+              });
+              box.appendChild(btn);
+            });
+          }
+        }
+        root.appendChild(box);
+        return;
+      }
       root.appendChild(pads);
       root.appendChild(panel);
       showGroup(state.kwOpen);
@@ -2312,6 +2671,11 @@
       if (!btn) return;
       btn.dataset.mode = state.idMode;
     }
+    function syncSheetLock() {
+      const on = !!$("kwSheet")?.classList.contains("open");
+      document.documentElement.classList.toggle("sheet-open", on);
+      document.body.classList.toggle("sheet-open", on);
+    }
     function closeKeywordSheet() {
       const sheet = $("kwSheet");
       const card = sheet?.querySelector(".kw-sheet-card");
@@ -2324,10 +2688,12 @@
           sheet.classList.remove("open");
           sheet.hidden = true;
         }
+        syncSheetLock();
         return;
       }
       state.kwOpen = null;
       renderKeywords();
+      syncSheetLock();
     }
     $("kwSheetClose").addEventListener("pointerdown", (e) => e.stopPropagation());
     $("kwSheetClose").addEventListener("click", (e) => {
@@ -2336,6 +2702,10 @@
       closeKeywordSheet();
     });
     $("kwSheetBack").addEventListener("click", closeKeywordSheet);
+    document.addEventListener("touchmove", (e) => {
+      if (!document.body.classList.contains("sheet-open")) return;
+      if (!e.target.closest(".kw-sheet-card")) e.preventDefault();
+    }, { passive: false });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (builderDrag.carry || builderDrag.on) {
@@ -2360,7 +2730,7 @@
     (function bindSheetSwipe() {
       const sheet = $("kwSheet");
       const card = sheet.querySelector(".kw-sheet-card");
-      const grab = (t) => !t.closest(".kw-sheet-close") && t.closest(".kw-sheet-handle, .kw-sheet-bar");
+      const grab = (t) => !t.closest(".kw-sheet-close") && t.closest(".kw-sheet-head");
       const drag = { on: false, y: 0, last: 0, v: 0 };
       const resetCard = () => {
         card.classList.remove("dragging");
@@ -2412,6 +2782,34 @@
       state.builderOpen = !state.builderOpen;
       paintBuilderOpen();
     });
+    function paintToTop() {
+      const btn = $("toTop");
+      if (!btn) return;
+      const show = window.scrollY > 360;
+      btn.classList.toggle("show", show);
+      btn.hidden = !show;
+    }
+    $("toTop").addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    window.addEventListener("scroll", paintToTop, { passive: true });
+    paintToTop();
+    function paintResultCols() {
+      const cols = String(state.resultCols || 2);
+      if (resultsEl) resultsEl.dataset.cols = cols;
+      document.querySelectorAll("#rowToggle [data-cols]").forEach((btn) => {
+        const on = btn.dataset.cols === cols;
+        btn.classList.toggle("on", on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    }
+    $("rowToggle").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-cols]");
+      if (!btn) return;
+      state.resultCols = Number(btn.dataset.cols);
+      paintResultCols();
+    });
+    paintResultCols();
     $("kwMode").addEventListener("click", (e) => {
       const bit = e.target.closest("[data-kw-mode]");
       if (!bit) return;
@@ -2443,6 +2841,17 @@
 
     ["sort", "unique"].forEach((id) => {
       $(id).addEventListener("change", updatePreview);
+    });
+    $("kwSearch").addEventListener("input", () => {
+      state.kwSearch = $("kwSearch").value;
+      renderKeywords();
+    });
+    $("kwSearch").addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        $("kwSearch").value = "";
+        state.kwSearch = "";
+        renderKeywords();
+      }
     });
     $("subtypeQuery").addEventListener("input", updatePreview);
     $("subtypeQuery").addEventListener("keydown", (e) => {
@@ -2536,11 +2945,13 @@
         b.setAttribute("aria-pressed", "false");
       });
       themeFromColors();
-      document.querySelectorAll("#types .chip").forEach((b) => {
+      document.querySelectorAll("#types .chip, #isFlags .chip, #layouts .chip").forEach((b) => {
         b.classList.remove("on", "exclude");
         if (b.dataset.label) b.textContent = b.dataset.label;
       });
       $("subtypeQuery").value = "";
+      $("kwSearch").value = "";
+      state.kwSearch = "";
       state.tree = { id: "root", kind: "group", op: null, not: false, children: [] };
       state.parts = [];
       state.focusId = "root";
@@ -2577,21 +2988,134 @@
       return card.type_line || card.card_faces?.[0]?.type_line || "";
     }
 
+    function facesFor(card) {
+      const printed = (card.card_faces || []).filter((f) => f.image_uris?.normal);
+      if (printed.length > 1) {
+        return printed.map((f) => ({
+          img: f.image_uris.normal,
+          name: f.name || card.name,
+          type: f.type_line || typeFor(card),
+        }));
+      }
+      return [{ img: imageFor(card), name: card.name, type: typeFor(card) }];
+    }
+
+    const priceCache = new Map();
+
+    function priceFromObj(p) {
+      const nums = ["usd", "usd_foil", "usd_etched"]
+        .map((k) => parseFloat(p && p[k]))
+        .filter((n) => Number.isFinite(n) && n >= 0);
+      return nums.length ? Math.min.apply(null, nums) : null;
+    }
+
+    function lowestPrice(card) {
+      const id = card.oracle_id || card.id;
+      if (id && priceCache.has(id) && priceCache.get(id) != null) return priceCache.get(id);
+      return priceFromObj(card.prices);
+    }
+
+    function formatPrice(n) {
+      if (n == null) return "…";
+      return "$" + n.toFixed(2);
+    }
+
+    function paintCardPrice(el, n) {
+      const priceEl = el.querySelector(".price");
+      if (!priceEl) return;
+      priceEl.textContent = n == null ? "—" : formatPrice(n);
+      priceEl.classList.toggle("none", n == null);
+    }
+
+    async function fetchPrintsMin(oracleIds) {
+      const found = {};
+      for (let i = 0; i < oracleIds.length; i += 12) {
+        const chunk = oracleIds.slice(i, i + 12);
+        let url = "https://api.scryfall.com/cards/search?" + new URLSearchParams({
+          q: chunk.map((id) => "oracleid:" + id).join(" or "),
+          unique: "prints",
+          order: "usd",
+          dir: "asc",
+        });
+        while (url) {
+          const res = await fetch(url);
+          const data = await res.json();
+          if (!res.ok) break;
+          (data.data || []).forEach((c) => {
+            const id = c.oracle_id;
+            const n = priceFromObj(c.prices);
+            if (!id || n == null) return;
+            found[id] = found[id] == null ? n : Math.min(found[id], n);
+          });
+          url = data.has_more ? data.next_page : null;
+        }
+      }
+      return found;
+    }
+
+    async function hydrateCardPrices(cards) {
+      cards.forEach((card) => {
+        const id = card.oracle_id || card.id;
+        const n = priceFromObj(card.prices);
+        if (id && n != null && !priceCache.has(id)) priceCache.set(id, n);
+      });
+      const missing = [];
+      cards.forEach((card) => {
+        const id = card.oracle_id;
+        if (!id) return;
+        if (priceCache.get(id) == null) missing.push(id);
+      });
+      const uniq = Array.from(new Set(missing));
+      if (uniq.length) {
+        const found = await fetchPrintsMin(uniq);
+        uniq.forEach((id) => priceCache.set(id, found[id] != null ? found[id] : priceCache.get(id)));
+      }
+      resultsEl.querySelectorAll(".card[data-oracle]").forEach((el) => {
+        const n = priceCache.get(el.dataset.oracle);
+        paintCardPrice(el, n == null ? null : n);
+      });
+    }
+
     function renderCards(cards, append) {
       if (!append) resultsEl.innerHTML = "";
       const frag = document.createDocumentFragment();
       for (const card of cards) {
         const el = document.createElement("article");
         el.className = "card";
-        const img = imageFor(card);
+        if (card.oracle_id) el.dataset.oracle = card.oracle_id;
+        const faces = facesFor(card);
         const scry = card.scryfall_uri || "#";
+        const price = lowestPrice(card);
         el.innerHTML =
-          '<a href="' + scry + '" target="_blank" rel="noopener">' +
-          (img ? '<img loading="lazy" alt="" src="' + img + '" />' : "") +
+          '<a class="card-art" href="' + scry + '" target="_blank" rel="noopener">' +
+          (faces[0].img ? '<img loading="lazy" alt="" src="' + faces[0].img + '" />' : "") +
           "</a>" +
-          '<div class="meta"><div class="name"></div><div class="type"></div></div>';
-        el.querySelector(".name").textContent = card.name;
-        el.querySelector(".type").textContent = typeFor(card);
+          '<div class="meta"><div class="meta-row"><div class="name"></div><div class="price"></div></div><div class="type"></div></div>';
+        const nameEl = el.querySelector(".name");
+        const typeEl = el.querySelector(".type");
+        const priceEl = el.querySelector(".price");
+        const imgEl = el.querySelector("img");
+        nameEl.textContent = faces[0].name;
+        typeEl.textContent = faces[0].type;
+        priceEl.textContent = formatPrice(price);
+        priceEl.classList.toggle("none", price == null);
+        if (faces.length > 1 && imgEl) {
+          let face = 0;
+          const flip = document.createElement("button");
+          flip.type = "button";
+          flip.className = "flip-btn";
+          flip.setAttribute("aria-label", "Flip card");
+          flip.textContent = "↺";
+          flip.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            face = (face + 1) % faces.length;
+            imgEl.src = faces[face].img;
+            nameEl.textContent = faces[face].name;
+            typeEl.textContent = faces[face].type;
+          });
+          el.querySelector(".card-art").appendChild(flip);
+        }
         frag.appendChild(el);
       }
       resultsEl.appendChild(frag);
@@ -2676,6 +3200,7 @@
         state.shown += cards.length;
         state.next = data.has_more ? data.next_page : null;
         renderCards(cards, !reset);
+        hydrateCardPrices(cards);
         moreBtn.hidden = !state.next;
         const colorNote = identityClause() || "any colors";
         setStatus(state.shown + " of " + state.total.toLocaleString() + " cards · " + colorNote);
@@ -2730,26 +3255,20 @@
           const key = String(name).toLowerCase();
           if (skipKeywords.has(key) || used.has(key)) return;
           const label = categorizeKeyword(name);
-          const group = byLabel[label] || byLabel["Engines"];
+          const group = byLabel[label] || byLabel["Ability words"];
           addUniqueItem(group, name, kwQuery(name));
           used.add(String(name).toLowerCase());
         });
         const awGroup = byLabel["Ability words"];
         if (awGroup && aw.data?.length) {
-          aw.data.forEach((name) => addUniqueItem(awGroup, name, kwQuery(name)));
-          const pinned = new Set(["landfall","magecraft","constellation","morbid","metalcraft","threshold","delirium","raid","battalion","revolt","eminence","undergrowth","coven","alliance","valiant","enrage"]);
-          awGroup.items.sort((a, b) => {
-            const ap = pinned.has(a[0].toLowerCase()) ? 0 : 1;
-            const bp = pinned.has(b[0].toLowerCase()) ? 0 : 1;
-            return ap - bp || a[0].localeCompare(b[0]);
+          aw.data.forEach((name) => {
+            if (used.has(String(name).toLowerCase())) return;
+            addUniqueItem(awGroup, titleWords(name), kwQuery(name));
+            used.add(String(name).toLowerCase());
           });
         }
         KEYWORD_GROUPS.forEach((group) => {
-          const roles = (ROLE_ITEMS[group.label] || []).map(([n]) => n.toLowerCase());
-          const head = group.items.filter(([n]) => roles.includes(n.toLowerCase()));
-          const rest = group.items.filter(([n]) => !roles.includes(n.toLowerCase()))
-            .sort((a, b) => a[0].localeCompare(b[0]));
-          group.items = head.concat(rest);
+          group.items.sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: "base" }));
         });
         renderKeywords();
       } catch (_) {
