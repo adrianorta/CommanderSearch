@@ -2089,10 +2089,8 @@ function renderCards(cards, append) {
     nameEl.className = "name";
     const priceEl = document.createElement("div");
     priceEl.className = "price";
-    const typeEl = document.createElement("div");
-    typeEl.className = "type";
-    metaRow.append(nameEl, priceEl);
-    meta.append(metaRow, typeEl);
+    metaRow.append(nameEl);
+    meta.append(metaRow, priceEl);
     const printings = document.createElement("button");
     printings.type = "button";
     printings.className = "printings-btn";
@@ -2101,7 +2099,6 @@ function renderCards(cards, append) {
     meta.appendChild(printings);
     el.append(art, meta);
     nameEl.textContent = faces[0].name;
-    typeEl.textContent = faces[0].type;
     if (imgEl) imgEl.alt = faces[0].name || "Card art";
     priceEl.textContent = formatPrice(price);
     priceEl.classList.toggle("none", price == null);
@@ -2119,7 +2116,6 @@ function renderCards(cards, append) {
         imgEl.src = faces[face].img;
         imgEl.alt = faces[face].name || "Card art";
         nameEl.textContent = faces[face].name;
-        typeEl.textContent = faces[face].type;
       });
       art.appendChild(flip);
     }
