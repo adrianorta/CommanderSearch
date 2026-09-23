@@ -51,8 +51,10 @@
           <button class="chip" data-t="land" aria-pressed="false">Land</button>
           <button class="chip" data-t="legendary" aria-pressed="false">Legendary</button>
         </div>
+        <label class="field subtype-label" for="oracleQuery">Oracle Text</label>
+        <input id="oracleQuery" type="text" placeholder="&quot;draw a card&quot; &quot;counter target&quot; -discard" autocomplete="off" spellcheck="false" />
         <label class="field subtype-label" for="subtypeQuery">Subtype</label>
-        <input id="subtypeQuery" type="text" placeholder="elf, -human, aura" autocomplete="off" spellcheck="false" />
+        <input id="subtypeQuery" type="text" placeholder="elf -human aura &quot;time lord&quot;" autocomplete="off" spellcheck="false" />
         <details class="extra-box printing-box">
           <summary>Printing details</summary>
           <div class="printing-fields">
@@ -143,7 +145,7 @@
           <div class="cmc-desk-hint" id="cmcDeskHint">Pick a mana value to begin.</div>
         </div>
       </section>
-
+      
       <section class="sec sec-kw">
         <div class="field-row">
           <label class="field">Keywords &amp; roles</label>

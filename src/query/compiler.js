@@ -73,6 +73,35 @@ export function compileNode(node, kwMode) {
   return node.not ? negateTerm(inner) : inner;
 }
 
+function parseOracleQuery(raw) {
+  const value = String(raw || '').trim();
+  if (!value) return '';
+  const tokens = [];
+  const pattern = /"([^"]+)"|([^,\s]+)|,/g;
+  let match;
+  while ((match = pattern.exec(value))) {
+    if (match[1] || match[2]) tokens.push((match[1] || match[2]).trim());
+  }
+  const included = [];
+  const excluded = [];
+  tokens.forEach((token) => {
+    if (!token) return;
+    const negated = token.startsWith('-') || token.startsWith('−');
+    const name = (negated ? token.slice(1) : token).trim().toLowerCase();
+    if (!name) return;
+    const term =
+      name.includes(' ') || name.includes("'") || name.includes(',')
+        ? 'o:"' + name + '"'
+        : 'o:' + name;
+    (negated ? excluded : included).push(negated ? '-' + term : term);
+  });
+  const parts = [];
+  if (included.length === 1) parts.push(included[0]);
+  else if (included.length > 1) parts.push('(' + included.join(' or ') + ')');
+  parts.push(...excluded);
+  return parts.join(' ');
+}
+
 function parseSubtypeQuery(raw) {
   const value = String(raw || '').trim();
   if (!value) return '';
@@ -120,6 +149,7 @@ export function buildQuery({
   parts = [],
   tree,
   kwMode,
+  oracle = '',
   subtype = '',
   set = '',
   rarity = '',
@@ -129,8 +159,11 @@ export function buildQuery({
   const clauses = ['f:commander', 'game:paper'];
   const identity = identityClause(colors, idMode);
   if (identity) clauses.push(identity);
+  const oracleText = parseOracleQuery(oracle);
+  if (oracleText) clauses.push(oracleText);
   const subtypes = parseSubtypeQuery(subtype);
   if (subtypes) clauses.push(subtypes);
+  
   const cmc = cmcClause(cmcMin, cmcMax);
   if (cmc) clauses.push(cmc);
   clauses.push(...metadataClauses({ set, rarity, yearFrom, yearTo }));

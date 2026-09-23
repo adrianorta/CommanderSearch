@@ -2564,7 +2564,7 @@ body.builder-node-dragging .builder-trash.drop-on {
 .box {
   position: relative;
   align-items: flex-start;
-  padding: 0 9px 10px 7px;
+  padding: 10px 9px 10px 7px;
   border-radius: 10px;
   border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
   background:

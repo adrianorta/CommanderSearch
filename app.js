@@ -587,6 +587,7 @@ function buildQuery() {
     parts: state.parts,
     tree: state.tree,
     kwMode: state.kwMode,
+    oracle: $("oracleQuery")?.value || "",
     subtype: $("subtypeQuery")?.value || "",
     set: $("setQuery")?.value || "",
     rarity: rarities,
@@ -1839,6 +1840,13 @@ $("kwSearch").addEventListener("keydown", (e) => {
     renderKeywords();
   }
 });
+$("oracleQuery").addEventListener("input", updatePreview);
+$("oracleQuery").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    search(true);
+  }
+});
 $("subtypeQuery").addEventListener("input", updatePreview);
 $("subtypeQuery").addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -1952,6 +1960,7 @@ $("clearBtn").addEventListener("click", () => {
     b.classList.remove("on", "exclude");
     if (b.dataset.label) b.textContent = b.dataset.label;
   });
+  $("oracleQuery").value = "";
   $("subtypeQuery").value = "";
   $("setQuery").value = "";
   document.querySelectorAll("#rarityQuery [data-rarity]").forEach((button) => {
