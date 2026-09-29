@@ -49,11 +49,9 @@
 
 .stat-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 8px;
-  margin-top: 12px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
-.stat-block-wide { grid-column: 1 / -1; }
 .stat-block .field { margin-bottom: 6px; }
 .stat-block .year-inputs {
   display: flex;
@@ -61,7 +59,14 @@
   gap: 6px;
 }
 .stat-block .year-inputs input { min-width: 0; }
-.sec-name .control-hint { margin-top: 8px; }
+.sec-stats {
+  padding-top: 12px;
+}
+.name-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
 .sec-cmc .field-row { margin-bottom: 4px; }
 .sec-cmc #cmcAny { font-size: 0.68rem; padding: 5px 9px; }
 
@@ -1162,6 +1167,7 @@ body.builder-dragging .join.need { visibility: hidden; }
     grid-template-areas:
       "brand brand brand brand"
       "id type cmc actions"
+      "stats stats stats stats"
       "kw kw kw kw"
       "builder builder builder builder"
       "query query query query";
@@ -1186,8 +1192,23 @@ body.builder-dragging .join.need { visibility: hidden; }
     min-width: 0;
     padding: 16px;
   }
-  .sec-id { grid-area: id; }
+  .sec-id {
+    grid-area: id;
+    display: flex;
+    flex-direction: column;
+  }
   .sec-id .row { flex-wrap: nowrap; }
+  .sec-id .name-block { margin-top: auto; }
+  .sec-cmc { grid-area: cmc; }
+  .sec-stats {
+    grid-area: stats;
+    padding: 14px 16px;
+  }
+  .sec-stats .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 24px;
+    align-items: end;
+  }
   .sec-type { grid-area: type; }
   .sec-cmc { grid-area: cmc; }
   .cmc-slider { display: none; }

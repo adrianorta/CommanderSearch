@@ -36,12 +36,10 @@
           <button class="mana" data-c="C" title="Colorless" aria-pressed="false"><img alt="C" src="https://svgs.scryfall.io/card-symbols/C.svg" /></button>
         </div>
         <p class="control-hint">Choose colors to shape the card identity.</p>
-      </section>
-
-      <section class="sec sec-name">
-        <label class="field" for="nameQuery">Card name</label>
-        <input id="nameQuery" type="text" placeholder="Sol Ring, Dockside…" autocomplete="off" spellcheck="false" />
-        <p class="control-hint">Matches the printed name. Combine with other filters or use alone.</p>
+        <div class="name-block">
+          <label class="field" for="nameQuery">Card name</label>
+          <input id="nameQuery" type="text" placeholder="Sol Ring, Dockside…" autocomplete="off" spellcheck="false" />
+        </div>
       </section>
 
       <section class="sec sec-type">
@@ -142,6 +140,17 @@
             <span>0</span><span>5</span><span>10</span><span>15</span>
           </div>
         </div>
+        <div class="cmc-desk" id="cmcDesk">
+          <div class="cmc-desk-summary">
+            <span class="cmc-desk-value" id="cmcDeskValue">Any mana value</span>
+            <span class="cmc-desk-count">0–15</span>
+          </div>
+          <div class="cmc-scale" id="cmcScale"></div>
+          <div class="cmc-desk-hint" id="cmcDeskHint">Pick a mana value to begin.</div>
+        </div>
+      </section>
+
+      <section class="sec sec-stats">
         <div class="stat-grid">
           <div class="stat-block">
             <label class="field" for="powMin">Power</label>
@@ -159,7 +168,7 @@
               <input id="touMax" type="number" step="1" placeholder="Max" aria-label="Maximum toughness" />
             </div>
           </div>
-          <div class="stat-block stat-block-wide">
+          <div class="stat-block">
             <label class="field" for="usdMin">Price (USD)</label>
             <div class="year-inputs">
               <input id="usdMin" type="number" min="0" step="0.01" placeholder="From $" aria-label="Minimum USD price" />
@@ -167,14 +176,6 @@
               <input id="usdMax" type="number" min="0" step="0.01" placeholder="To $" aria-label="Maximum USD price" />
             </div>
           </div>
-        </div>
-        <div class="cmc-desk" id="cmcDesk">
-          <div class="cmc-desk-summary">
-            <span class="cmc-desk-value" id="cmcDeskValue">Any mana value</span>
-            <span class="cmc-desk-count">0–15</span>
-          </div>
-          <div class="cmc-scale" id="cmcScale"></div>
-          <div class="cmc-desk-hint" id="cmcDeskHint">Pick a mana value to begin.</div>
         </div>
       </section>
       
