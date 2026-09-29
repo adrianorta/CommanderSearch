@@ -46,6 +46,22 @@
   color: var(--accent);
   font-size: 1.3rem;
 }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 8px;
+  margin-top: 12px;
+}
+.stat-block-wide { grid-column: 1 / -1; }
+.stat-block .field { margin-bottom: 6px; }
+.stat-block .year-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-block .year-inputs input { min-width: 0; }
+.sec-name .control-hint { margin-top: 8px; }
 .sec-cmc .field-row { margin-bottom: 4px; }
 .sec-cmc #cmcAny { font-size: 0.68rem; padding: 5px 9px; }
 

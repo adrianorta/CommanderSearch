@@ -141,6 +141,34 @@ export function cmcClause(min, max) {
   return 'cmc>=' + min + ' cmc<=' + max;
 }
 
+function quoteName(value) {
+  const text = String(value || '').trim().replace(/"/g, '');
+  if (!text) return '';
+  return /[\s:]/.test(text) ? 'name:"' + text + '"' : 'name:' + text;
+}
+
+export function nameClause(raw) {
+  return quoteName(raw);
+}
+
+function numericBound(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  const number = Number(text);
+  return Number.isFinite(number) ? number : null;
+}
+
+export function numericRangeClause(prefix, min, max) {
+  const lo = numericBound(min);
+  const hi = numericBound(max);
+  if (lo == null && hi == null) return '';
+  if (lo != null && hi != null && lo === hi) return prefix + '=' + lo;
+  const bits = [];
+  if (lo != null) bits.push(prefix + '>=' + lo);
+  if (hi != null) bits.push(prefix + '<=' + hi);
+  return bits.join(' ');
+}
+
 export function buildQuery({
   colors,
   idMode,
@@ -149,23 +177,38 @@ export function buildQuery({
   parts = [],
   tree,
   kwMode,
+  name = '',
   oracle = '',
   subtype = '',
   set = '',
   rarity = '',
   yearFrom = '',
   yearTo = '',
+  powMin = '',
+  powMax = '',
+  touMin = '',
+  touMax = '',
+  usdMin = '',
+  usdMax = '',
 }) {
   const clauses = ['f:commander', 'game:paper'];
   const identity = identityClause(colors, idMode);
   if (identity) clauses.push(identity);
+  const cardName = nameClause(name);
+  if (cardName) clauses.push(cardName);
   const oracleText = parseOracleQuery(oracle);
   if (oracleText) clauses.push(oracleText);
   const subtypes = parseSubtypeQuery(subtype);
   if (subtypes) clauses.push(subtypes);
-  
+
   const cmc = cmcClause(cmcMin, cmcMax);
   if (cmc) clauses.push(cmc);
+  const power = numericRangeClause('pow', powMin, powMax);
+  if (power) clauses.push(power);
+  const toughness = numericRangeClause('tou', touMin, touMax);
+  if (toughness) clauses.push(toughness);
+  const price = numericRangeClause('usd', usdMin, usdMax);
+  if (price) clauses.push(price);
   clauses.push(...metadataClauses({ set, rarity, yearFrom, yearTo }));
   const match = tree?.children?.length ? compileNode(tree, kwMode) : partsClause(parts, kwMode);
   if (match) clauses.push(match);

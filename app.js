@@ -587,12 +587,19 @@ function buildQuery() {
     parts: state.parts,
     tree: state.tree,
     kwMode: state.kwMode,
+    name: $("nameQuery")?.value || "",
     oracle: $("oracleQuery")?.value || "",
     subtype: $("subtypeQuery")?.value || "",
     set: $("setQuery")?.value || "",
     rarity: rarities,
     yearFrom: $("yearFrom")?.value || "",
-    yearTo: $("yearTo")?.value || ""
+    yearTo: $("yearTo")?.value || "",
+    powMin: $("powMin")?.value || "",
+    powMax: $("powMax")?.value || "",
+    touMin: $("touMin")?.value || "",
+    touMax: $("touMax")?.value || "",
+    usdMin: $("usdMin")?.value || "",
+    usdMax: $("usdMax")?.value || ""
   });
 }
 
@@ -1818,9 +1825,11 @@ bindBuilderDrag($("addOrBtn"), { kind: "expr", expr: "or", label: "OR" });
 bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "Group" });
 bindBuilderDrag($("addNotBtn"), { kind: "expr", expr: "not", label: "NOT" });
 
-["sort", "unique", "setQuery", "yearFrom", "yearTo"].forEach((id) => {
-  $(id).addEventListener("change", updatePreview);
-  $(id).addEventListener("input", updatePreview);
+["sort", "unique", "setQuery", "yearFrom", "yearTo", "nameQuery", "powMin", "powMax", "touMin", "touMax", "usdMin", "usdMax"].forEach((id) => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener("change", updatePreview);
+  el.addEventListener("input", updatePreview);
 });
 document.querySelectorAll("#rarityQuery [data-rarity]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -1840,13 +1849,17 @@ $("kwSearch").addEventListener("keydown", (e) => {
     renderKeywords();
   }
 });
-$("oracleQuery").addEventListener("input", updatePreview);
-$("oracleQuery").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    search(true);
-  }
+["nameQuery", "oracleQuery", "powMin", "powMax", "touMin", "touMax", "usdMin", "usdMax"].forEach((id) => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      search(true);
+    }
+  });
 });
+$("oracleQuery").addEventListener("input", updatePreview);
 $("subtypeQuery").addEventListener("input", updatePreview);
 $("subtypeQuery").addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -1960,6 +1973,13 @@ $("clearBtn").addEventListener("click", () => {
     b.classList.remove("on", "exclude");
     if (b.dataset.label) b.textContent = b.dataset.label;
   });
+  $("nameQuery").value = "";
+  $("powMin").value = "";
+  $("powMax").value = "";
+  $("touMin").value = "";
+  $("touMax").value = "";
+  $("usdMin").value = "";
+  $("usdMax").value = "";
   $("oracleQuery").value = "";
   $("subtypeQuery").value = "";
   $("setQuery").value = "";

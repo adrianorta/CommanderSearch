@@ -38,6 +38,12 @@
         <p class="control-hint">Choose colors to shape the card identity.</p>
       </section>
 
+      <section class="sec sec-name">
+        <label class="field" for="nameQuery">Card name</label>
+        <input id="nameQuery" type="text" placeholder="Sol Ring, Dockside…" autocomplete="off" spellcheck="false" />
+        <p class="control-hint">Matches the printed name. Combine with other filters or use alone.</p>
+      </section>
+
       <section class="sec sec-type">
         <label class="field">Type</label>
         <div class="types" id="types">
@@ -134,6 +140,32 @@
           </div>
           <div class="cmc-ticks">
             <span>0</span><span>5</span><span>10</span><span>15</span>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-block">
+            <label class="field" for="powMin">Power</label>
+            <div class="year-inputs">
+              <input id="powMin" type="number" step="1" placeholder="Min" aria-label="Minimum power" />
+              <span aria-hidden="true">–</span>
+              <input id="powMax" type="number" step="1" placeholder="Max" aria-label="Maximum power" />
+            </div>
+          </div>
+          <div class="stat-block">
+            <label class="field" for="touMin">Toughness</label>
+            <div class="year-inputs">
+              <input id="touMin" type="number" step="1" placeholder="Min" aria-label="Minimum toughness" />
+              <span aria-hidden="true">–</span>
+              <input id="touMax" type="number" step="1" placeholder="Max" aria-label="Maximum toughness" />
+            </div>
+          </div>
+          <div class="stat-block stat-block-wide">
+            <label class="field" for="usdMin">Price (USD)</label>
+            <div class="year-inputs">
+              <input id="usdMin" type="number" min="0" step="0.01" placeholder="From $" aria-label="Minimum USD price" />
+              <span aria-hidden="true">–</span>
+              <input id="usdMax" type="number" min="0" step="0.01" placeholder="To $" aria-label="Maximum USD price" />
+            </div>
           </div>
         </div>
         <div class="cmc-desk" id="cmcDesk">
