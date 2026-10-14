@@ -6,6 +6,7 @@ import {
   isQuery,
   kwQuery,
   layoutQuery,
+  oracleTermQuery,
   typeQuery
 } from "./src/query/compiler.js";
 import { createScryfallClient } from "./src/api/scryfall-client.js";
@@ -396,7 +397,10 @@ function buildKeywordGroups() {
 const KEYWORD_GROUPS = buildKeywordGroups();
 
 const state = createAppState();
+state.resultCols = window.matchMedia("(max-width: 900px)").matches ? 3 : 5;
 const nextTreeId = createTreeIdFactory();
+let builderPickerTab = "types";
+let builderPickerSearch = "";
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
@@ -586,9 +590,9 @@ function buildQuery() {
     cmcMax: state.cmcMax,
     parts: state.parts,
     tree: state.tree,
+    oracleTree: state.oracleTree,
     kwMode: state.kwMode,
     name: $("nameQuery")?.value || "",
-    oracle: $("oracleQuery")?.value || "",
     subtype: $("subtypeQuery")?.value || "",
     set: $("setQuery")?.value || "",
     rarity: rarities,
@@ -698,6 +702,195 @@ function updatePreview() {
   renderBuilder();
   paintTypePalette();
   renderLineage();
+}
+
+function findOracleNode(id, node = state.oracleTree) {
+  if (node.id === id) return node;
+  for (const child of node.children || []) {
+    const found = findOracleNode(id, child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function oracleOperatorButtons(group) {
+  const controls = document.createElement("div");
+  controls.className = "oracle-logic";
+  controls.setAttribute("role", "group");
+  controls.setAttribute("aria-label", "Match phrases in this group");
+  [["and", "AND"], ["or", "OR"]].forEach(([op, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.oracleOp = op;
+    button.dataset.oracleGroup = group.id;
+    button.setAttribute("aria-pressed", String(group.op === op));
+    button.textContent = label;
+    controls.appendChild(button);
+  });
+  return controls;
+}
+
+function oracleAddButton(action, group, label) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "oracle-add";
+  button.dataset.oracleAction = action;
+  button.dataset.oracleParent = group.id;
+  button.textContent = "+ " + label;
+  return button;
+}
+
+function renderOracleGroup(group, isRoot = false) {
+  const container = document.createElement(isRoot ? "div" : "section");
+  container.className = isRoot ? "oracle-root-group" : "oracle-nested-group";
+  container.dataset.oracleGroup = group.id;
+
+  if (!isRoot) {
+    const heading = document.createElement("div");
+    heading.className = "oracle-group-heading";
+    const label = document.createElement("span");
+    label.textContent = "Group";
+    heading.append(label, oracleOperatorButtons(group));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "oracle-remove";
+    remove.dataset.oracleAction = "remove";
+    remove.dataset.oracleNode = group.id;
+    remove.setAttribute("aria-label", "Remove group");
+    remove.textContent = "×";
+    heading.appendChild(remove);
+    container.appendChild(heading);
+  }
+
+  const children = document.createElement("div");
+  children.className = "oracle-group-children";
+  group.children.forEach((child) => {
+    if (child.kind === "group") {
+      children.appendChild(renderOracleGroup(child));
+      return;
+    }
+    const row = document.createElement("div");
+    row.className = "oracle-term-row";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.placeholder = "e.g. draw a card";
+    input.setAttribute("aria-label", "Oracle text phrase");
+    input.dataset.oracleTerm = child.id;
+    input.value = child.term;
+    row.appendChild(input);
+
+    const exclude = document.createElement("button");
+    exclude.type = "button";
+    exclude.className = "oracle-exclude";
+    exclude.dataset.oracleAction = "toggle-not";
+    exclude.dataset.oracleNode = child.id;
+    exclude.setAttribute("aria-pressed", String(Boolean(child.not)));
+    exclude.setAttribute("aria-label", child.not ? "Phrase is negated" : "Negate phrase");
+    exclude.textContent = "NOT";
+    row.appendChild(exclude);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "oracle-remove";
+    remove.dataset.oracleAction = "remove";
+    remove.dataset.oracleNode = child.id;
+    remove.setAttribute("aria-label", "Remove phrase");
+    remove.textContent = "×";
+    row.appendChild(remove);
+    children.appendChild(row);
+  });
+  container.appendChild(children);
+
+  if (!isRoot) {
+    const actions = document.createElement("div");
+    actions.className = "oracle-add-actions";
+    actions.append(
+      oracleAddButton("add-term", group, "Phrase"),
+      oracleAddButton("add-group", group, "Group")
+    );
+    container.appendChild(actions);
+  }
+  return container;
+}
+
+function renderOracleBuilder() {
+  const root = state.oracleTree;
+  document.querySelectorAll("#oracleLogic [data-oracle-op]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(root.op === button.dataset.oracleOp));
+  });
+  $("oracleGroupRoot").replaceChildren(renderOracleGroup(root, true));
+}
+
+$("oracleBuilder").addEventListener("input", (event) => {
+  const input = event.target.closest("[data-oracle-term]");
+  if (!input) return;
+  const node = findOracleNode(input.dataset.oracleTerm);
+  if (!node) return;
+  node.term = input.value;
+  updatePreview();
+});
+
+$("oracleBuilder").addEventListener("click", (event) => {
+  const operator = event.target.closest("[data-oracle-op]");
+  if (operator) {
+    const group = findOracleNode(operator.dataset.oracleGroup || "oracle-root");
+    if (!group) return;
+    group.op = operator.dataset.oracleOp;
+    renderOracleBuilder();
+    updatePreview();
+    return;
+  }
+
+  const button = event.target.closest("[data-oracle-action]");
+  if (!button) return;
+  const action = button.dataset.oracleAction;
+  if (action === "add-term" || action === "add-group") {
+    const parent = findOracleNode(button.dataset.oracleParent);
+    if (!parent) return;
+    const nodeId = "oracle-" + nextTreeId();
+    parent.children.push(
+      action === "add-term"
+        ? { id: nodeId, kind: "leaf", term: "", not: false }
+        : {
+            id: nodeId,
+            kind: "group",
+            op: "or",
+            children: [],
+          }
+    );
+    renderOracleBuilder();
+    updatePreview();
+    if (action === "add-term") {
+      [...$("oracleBuilder").querySelectorAll("[data-oracle-term]")].find(
+        (input) => input.dataset.oracleTerm === nodeId
+      )?.focus();
+    }
+    return;
+  }
+
+  const nodeId = button.dataset.oracleNode;
+  const node = findOracleNode(nodeId);
+  if (!node) return;
+  if (action === "toggle-not") {
+    node.not = !node.not;
+  } else if (action === "remove") {
+    const parent = findOracleNodeParent(nodeId);
+    if (!parent) return;
+    parent.children = parent.children.filter((child) => child.id !== nodeId);
+  }
+  renderOracleBuilder();
+  updatePreview();
+});
+
+function findOracleNodeParent(id, node = state.oracleTree) {
+  for (const child of node.children || []) {
+    if (child.id === id) return node;
+    const found = findOracleNodeParent(id, child);
+    if (found) return found;
+  }
+  return null;
 }
 
 document.querySelectorAll("#colors .mana").forEach((btn) => {
@@ -873,41 +1066,27 @@ function renderLineage() {
   });
   el.hidden = !el.children.length;
 }
-function wrapRootWithAndLeaf(leaf) {
-  const kids = state.tree.children;
-  const alreadyBoxed = kids.length === 1 && kids[0].kind === "group";
-  if (alreadyBoxed || state.tree.op === "and") {
-    state.tree.op = "and";
-    state.tree.children.push(leaf);
-    state.focusId = "root";
-    return;
-  }
-  const inner = {
-    id: nextTreeId(),
-    kind: "group",
-    op: state.tree.op,
-    not: state.tree.not,
-    children: kids
-  };
-  state.tree.op = "and";
-  state.tree.not = false;
-  state.tree.children = [leaf, inner];
+function appendRootLeaf(leaf) {
+  state.tree.children.push(leaf);
   state.focusId = "root";
 }
-function removeQueryFromTree(query) {
-  walkTree(state.tree, (n, parent) => {
-    if (!parent || n.kind !== "leaf" || n.query !== query) return;
-    parent.children = parent.children.filter((ch) => ch.id !== n.id);
+function removeQueryFromTree(query, node = state.tree) {
+  node.children = node.children.filter((child) => {
+    if (child.kind === "leaf") return child.query !== query;
+    removeQueryFromTree(query, child);
+    return child.children.length > 0;
   });
 }
 function togglePaletteLeaf({ label, query, source }) {
-  const idx = state.parts.findIndex((p) => p.query === query);
-  if (idx >= 0) {
-    state.parts.splice(idx, 1);
+  const selected = state.parts.some((part) => part.query === query);
+  const inTree = treeLeaves().some((leaf) => leaf.query === query);
+  if (selected || inTree) {
+    state.parts = state.parts.filter((part) => part.query !== query);
+    removeQueryFromTree(query);
   } else {
     state.parts.push({ id: nextTreeId(), label, query, source });
     if (source === "type" && expressionIsSetup() && !treeLeaves().some((n) => n.query === query)) {
-      wrapRootWithAndLeaf({
+      appendRootLeaf({
         id: nextTreeId(),
         kind: "leaf",
         label,
@@ -925,6 +1104,27 @@ function togglePaletteLeaf({ label, query, source }) {
   }
   renderKeywords();
   updatePreview();
+}
+
+function addPartAsNot(part) {
+  if (!expressionIsSetup()) {
+    state.tree.op = "or";
+    state.tree.not = false;
+    state.tree.children = [];
+  }
+  const leaf = {
+    id: nextTreeId(),
+    kind: "leaf",
+    label: part.label,
+    query: part.query,
+    source: part.source,
+    not: true
+  };
+  appendRootLeaf(leaf);
+  state.focusId = "root";
+  renderKeywords();
+  updatePreview();
+  return leaf.id;
 }
 
 function selectedInGroup(group) {
@@ -1153,44 +1353,31 @@ function containerDepth(node) {
   while (cur && cur.id !== "root") { d += 1; cur = parentOf(cur.id); }
   return d;
 }
-function placePart(part, dest, index) {
-  const box = dest || focusedContainer();
-  const at = index == null ? box.children.length : Math.max(0, Math.min(index, box.children.length));
-  box.children.splice(at, 0, {
-    id: nextTreeId(), kind: "leaf", label: part.label, query: part.query, source: part.source, not: false
-  });
-  state.focusId = box.id;
-  renderKeywords();
-  updatePreview();
-}
 function addContainer(op, not, index) {
   const box = focusedContainer();
   if (containerDepth(box) >= 4) return;
-  const child = { id: nextTreeId(), kind: "group", op: op || null, not: !!not, children: [] };
+  const child = { id: nextTreeId(), kind: "group", op: op || "or", not: !!not, children: [] };
   const at = index == null ? box.children.length : Math.max(0, Math.min(index, box.children.length));
   box.children.splice(at, 0, child);
   state.focusId = child.id;
   updatePreview();
 }
-function setJoin(op) {
-  const box = focusedContainer();
-  box.op = op;
-  if (box.id === "root") { state.kwMode = op || "and"; paintKwMode(); }
+function placePart(part, dest, index) {
+  const box = dest || focusedContainer();
+  const at = index == null ? box.children.length : Math.max(0, Math.min(index, box.children.length));
+  const leaf = {
+    id: nextTreeId(),
+    kind: "leaf",
+    label: part.label,
+    query: part.query,
+    source: part.source,
+    not: false
+  };
+  box.children.splice(at, 0, leaf);
+  state.focusId = box.id;
+  renderKeywords();
   updatePreview();
-}
-function wrapParens() {
-  const focus = findNode(state.focusId) || state.tree;
-  if (focus.kind === "leaf") {
-    const parent = parentOf(focus.id);
-    if (!parent) return;
-    const idx = parent.children.findIndex((ch) => ch.id === focus.id);
-    const group = { id: nextTreeId(), kind: "group", op: null, not: false, children: [focus] };
-    parent.children.splice(idx, 1, group);
-    state.focusId = group.id;
-    updatePreview();
-    return;
-  }
-  addContainer(null, false);
+  return leaf.id;
 }
 function toggleNegate() {
   const focus = findNode(state.focusId) || state.tree;
@@ -1244,7 +1431,7 @@ function dropPayload(payload, destId, index) {
     return;
   }
   if (destId === "parts") {
-    if (payload.kind === "part" || payload.kind === "expr") return;
+    if (payload.kind === "part") return;
     const node = takeNode(payload.id);
     if (node) returnLeavesToParts(node);
     state.focusId = "root";
@@ -1254,20 +1441,6 @@ function dropPayload(payload, destId, index) {
   }
   const dest = destId === "root" ? state.tree : findNode(destId);
   if (!dest || dest.kind !== "group") return;
-  if (payload.kind === "expr") {
-    if (payload.expr === "and" || payload.expr === "or") {
-      dest.op = payload.expr;
-      if (dest.id === "root") { state.kwMode = dest.op; paintKwMode(); }
-      state.focusId = dest.id;
-      updatePreview();
-      return;
-    }
-    const child = { id: nextTreeId(), kind: "group", op: null, not: payload.expr === "not", children: [] };
-    dest.children.splice(Math.max(0, Math.min(index, dest.children.length)), 0, child);
-    state.focusId = child.id;
-    updatePreview();
-    return;
-  }
   if (payload.kind === "part") {
     const part = state.parts.find((p) => p.query === payload.query);
     if (!part) return;
@@ -1284,18 +1457,23 @@ function dropPayload(payload, destId, index) {
 }
 const builderDrag = {
   on: false, moved: false, payload: null, ghost: null, fromEl: null, slot: null,
-  ignoreClick: false, carry: null, holdTimer: null, pointerId: null
+  ignoreClick: false, carry: null, holdTimer: null, pointerId: null,
+  groupTimer: null, groupTarget: null, groupReady: false
 };
 function clearHold() {
   if (builderDrag.holdTimer) { clearTimeout(builderDrag.holdTimer); builderDrag.holdTimer = null; }
 }
 function dragCleanup(keepCarry) {
   clearHold();
+  if (builderDrag.groupTimer) { clearTimeout(builderDrag.groupTimer); builderDrag.groupTimer = null; }
   if (!keepCarry && builderDrag.ghost) builderDrag.ghost.remove();
   if (builderDrag.slot) builderDrag.slot.remove();
-  document.querySelectorAll(".drop-on, .is-dragging").forEach((el) => el.classList.remove("drop-on", "is-dragging"));
+  document.querySelectorAll(".drop-on, .is-dragging, .group-pending, .group-ready").forEach((el) => {
+    el.classList.remove("drop-on", "is-dragging", "group-pending", "group-ready");
+  });
   builderDrag.on = false; builderDrag.moved = false; builderDrag.payload = null;
   builderDrag.fromEl = null; builderDrag.slot = null; builderDrag.pointerId = null;
+  builderDrag.groupTarget = null; builderDrag.groupReady = false;
   if (!keepCarry) {
     builderDrag.ghost = null;
     builderDrag.carry = null;
@@ -1330,6 +1508,84 @@ function paintDrop(x, y) {
   drop.el.classList.add("drop-on");
   return drop;
 }
+function groupTargetAt(x, y, payload) {
+  const targetEl = document.elementsFromPoint(x, y)
+    .map((element) => element.closest && element.closest(".leaf[data-node-id]"))
+    .find((element) => element && $("workspace").contains(element));
+  if (!targetEl) return null;
+  const target = findNode(targetEl.dataset.nodeId);
+  if (!target || target.kind !== "leaf") return null;
+  if (payload.kind === "node") {
+    const source = findNode(payload.id);
+    if (!source || source.kind !== "leaf" || source.id === target.id) return null;
+    const sourceParent = parentOf(source.id);
+    if (!sourceParent || sourceParent !== parentOf(target.id)) return null;
+  } else if (payload.kind === "part") {
+    if (!state.parts.some((part) => part.query === payload.query)) return null;
+  } else return null;
+  return { el: targetEl, id: target.id, label: target.label };
+}
+function updateGroupTarget(x, y, payload) {
+  const candidate = groupTargetAt(x, y, payload);
+  if (candidate && builderDrag.groupTarget?.id === candidate.id) return;
+  if (builderDrag.groupTimer) clearTimeout(builderDrag.groupTimer);
+  document.querySelectorAll(".group-pending, .group-ready").forEach((el) => {
+    el.classList.remove("group-pending", "group-ready");
+  });
+  builderDrag.groupTimer = null;
+  builderDrag.groupTarget = candidate;
+  builderDrag.groupReady = false;
+  if (!candidate) {
+    const hint = $("builderHint");
+    if (hint) hint.textContent = "Drag a block onto another and hold; release when highlighted to group them.";
+    return;
+  }
+  candidate.el.classList.add("group-pending");
+  const hint = $("builderHint");
+  if (hint) hint.textContent = "Hold over " + candidate.label + " to group these blocks.";
+  builderDrag.groupTimer = setTimeout(() => {
+    if (!builderDrag.on && !builderDrag.carry) return;
+    builderDrag.groupReady = true;
+    candidate.el.classList.remove("group-pending");
+    candidate.el.classList.add("group-ready");
+    if (hint) hint.textContent = "Release to group " + (payload.label || "block") + " with " + candidate.label + " (OR).";
+  }, 650);
+}
+function groupWithTarget(payload, targetId) {
+  const target = findNode(targetId);
+  if (!target || target.kind !== "leaf") return false;
+  let parent = parentOf(target.id);
+  if (!parent) return false;
+  let grouped;
+  if (payload.kind === "part") {
+    const part = state.parts.find((item) => item.query === payload.query);
+    if (!part) return false;
+    const targetIndex = parent.children.findIndex((child) => child.id === target.id);
+    const partLeaf = {
+      id: nextTreeId(),
+      kind: "leaf",
+      label: part.label,
+      query: part.query,
+      source: part.source,
+      not: false
+    };
+    grouped = { id: nextTreeId(), kind: "group", op: "or", not: false, children: [target, partLeaf] };
+    parent.children.splice(targetIndex, 1, grouped);
+  } else if (payload.kind === "node") {
+    const source = findNode(payload.id);
+    if (!source || source.kind !== "leaf" || source.id === target.id || parentOf(source.id) !== parent) return false;
+    const sourceIndex = parent.children.findIndex((child) => child.id === source.id);
+    const targetIndex = parent.children.findIndex((child) => child.id === target.id);
+    const firstIndex = Math.min(sourceIndex, targetIndex);
+    const children = sourceIndex < targetIndex ? [source, target] : [target, source];
+    grouped = { id: nextTreeId(), kind: "group", op: "or", not: false, children };
+    parent.children.splice(Math.max(sourceIndex, targetIndex), 1);
+    parent.children.splice(firstIndex, 1, grouped);
+  } else return false;
+  state.focusId = grouped.id;
+  updatePreview();
+  return true;
+}
 function dropIndexFor(container, x) {
   const kids = [...container.querySelectorAll(":scope > [data-node-id]")];
   for (let i = 0; i < kids.length; i++) {
@@ -1350,7 +1606,7 @@ function bindBuilderDrag(el, payload) {
     if (e.button && e.button !== 0) return;
     const owner = e.target.closest("[data-node-id]");
     if (owner && owner !== el) return;
-    if (e.target.closest(".mini")) return;
+    if (e.target.closest(".mini, .join-toggle")) return;
     if (builderDrag.carry) return;
     clearHold();
     builderDrag.on = true;
@@ -1379,24 +1635,43 @@ function onDragMove(e) {
   const payload = builderDrag.payload || builderDrag.carry;
   if (builderDrag.ghost) liftGhost(payload && payload.label, x, y);
   paintDrop(x, y);
+  updateGroupTarget(x, y, payload);
 }
 function onDragEnd(e) {
   if (builderDrag.carry && !builderDrag.on) {
-    const drop = currentDrop(e.clientX, e.clientY);
     const payload = builderDrag.carry;
+    const targetId = builderDrag.groupReady && builderDrag.groupTarget
+      ? builderDrag.groupTarget.id
+      : null;
+    const drop = currentDrop(e.clientX, e.clientY);
     builderDrag.ignoreClick = true;
+    if (targetId) {
+      dragCleanup();
+      groupWithTarget(payload, targetId);
+      return;
+    }
     if (drop) {
       dragCleanup();
       dropPayload(payload, drop.dest, drop.index);
+    } else {
+      dragCleanup();
     }
     return;
   }
   if (!builderDrag.on) return;
   const payload = builderDrag.payload;
   const moved = builderDrag.moved;
+  const targetId = builderDrag.groupReady && builderDrag.groupTarget
+    ? builderDrag.groupTarget.id
+    : null;
   const drop = moved ? currentDrop(e.clientX, e.clientY) : null;
   clearHold();
   if (moved) builderDrag.ignoreClick = true;
+  if (moved && payload && targetId) {
+    dragCleanup();
+    groupWithTarget(payload, targetId);
+    return;
+  }
   if (moved && payload && drop) {
     dragCleanup();
     dropPayload(payload, drop.dest, drop.index);
@@ -1422,12 +1697,123 @@ document.addEventListener("touchmove", (e) => {
   }
 }, { passive: false, capture: true });
 
+function builderPickerItems() {
+  if (builderPickerTab === "types") {
+    return [...document.querySelectorAll("#types .chip")].map((button) => ({
+      label: button.dataset.label || button.textContent.trim(),
+      query: typeQuery(button.dataset.t),
+      source: "type",
+      category: "Type"
+    }));
+  }
+  const seen = new Set();
+  return KEYWORD_GROUPS.flatMap((group) =>
+    group.items.map(([label, query]) => ({ label, query, source: "role", category: group.label }))
+  ).filter((item) => {
+    if (seen.has(item.query)) return false;
+    seen.add(item.query);
+    return true;
+  });
+}
+
+function renderBuilderPicker() {
+  const picker = $("builderPicker");
+  const results = $("builderPickerResults");
+  const search = $("builderPickerSearch");
+  const toggle = $("builderAddFilter");
+  if (!picker || !results || !search || !toggle) return;
+  picker.hidden = !state.builderPickerOpen;
+  toggle.setAttribute("aria-expanded", String(state.builderPickerOpen));
+  document.querySelectorAll("[data-builder-tab]").forEach((button) => {
+    const selected = button.dataset.builderTab === builderPickerTab;
+    button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+  search.value = builderPickerSearch;
+  results.innerHTML = "";
+  const needle = builderPickerSearch.trim().toLocaleLowerCase();
+  const items = builderPickerItems().filter((item) => {
+    const haystack = (item.label + " " + item.query).toLocaleLowerCase();
+    return !needle || haystack.includes(needle);
+  });
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "builder-picker-empty";
+    empty.textContent = "No matching filters.";
+    results.appendChild(empty);
+    return;
+  }
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "builder-picker-item";
+    row.setAttribute("role", "listitem");
+    row.dataset.filterLabel = item.label;
+    row.dataset.filterQuery = item.query;
+    const name = document.createElement("div");
+    name.className = "builder-picker-name";
+    name.textContent = item.label;
+    const category = document.createElement("span");
+    category.textContent = item.category;
+    name.appendChild(category);
+    row.appendChild(name);
+    const actions = document.createElement("div");
+    actions.className = "builder-picker-actions";
+    const available = document.createElement("button");
+    available.type = "button";
+    available.textContent = state.parts.some((part) => part.query === item.query) ? "Added" : "To blocks";
+    available.disabled = state.parts.some((part) => part.query === item.query);
+    available.setAttribute("aria-label", "Add " + item.label + " to available blocks");
+    available.addEventListener("click", () => {
+      if (!state.parts.some((part) => part.query === item.query)) {
+        state.parts.push({ id: nextTreeId(), label: item.label, query: item.query, source: item.source });
+        renderKeywords();
+        updatePreview();
+        $("builderPickerSearch").focus();
+      }
+    });
+    const add = document.createElement("button");
+    add.type = "button";
+    add.textContent = "Add";
+    add.setAttribute("aria-label", "Add " + item.label + " to the script");
+    add.addEventListener("click", () => {
+      ensurePart(item.label, item.query, item.source);
+      state.builderPickerOpen = false;
+      const nodeId = placePart(state.parts.find((part) => part.query === item.query));
+      document.querySelector(`#workspace [data-node-id="${nodeId}"]`)?.focus();
+    });
+    const not = document.createElement("button");
+    not.type = "button";
+    not.className = "part-not";
+    not.textContent = "NOT";
+    not.setAttribute("aria-label", "Add NOT " + item.label + " to the script");
+    not.addEventListener("click", () => {
+      ensurePart(item.label, item.query, item.source);
+      state.builderPickerOpen = false;
+      const nodeId = addPartAsNot(state.parts.find((part) => part.query === item.query));
+      document.querySelector(`#workspace [data-node-id="${nodeId}"]`)?.focus();
+    });
+    actions.append(available, add, not);
+    row.appendChild(actions);
+    results.appendChild(row);
+  });
+}
+
+function setBuilderPickerOpen(open) {
+  state.builderPickerOpen = open;
+  if (open) {
+    builderPickerTab = "types";
+    builderPickerSearch = "";
+  }
+  renderBuilderPicker();
+}
+
 function renderBuilder() {
   const partsEl = $("parts");
   const space = $("workspace");
   const hint = $("builderHint");
   const read = $("builderRead");
   if (!partsEl || !space) return;
+  renderBuilderPicker();
   partsEl.innerHTML = "";
   space.innerHTML = "";
   partsEl.dataset.drop = "parts";
@@ -1438,6 +1824,8 @@ function renderBuilder() {
     partsEl.appendChild(empty);
   } else {
     state.parts.forEach((part) => {
+      const choice = document.createElement("div");
+      choice.className = "part-choice";
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "leaf on" + (part.source === "type" ? " type" : "");
@@ -1451,13 +1839,34 @@ function renderBuilder() {
         placePart(part);
       });
       bindBuilderDrag(btn, { kind: "part", query: part.query, label: part.label });
-      partsEl.appendChild(btn);
+      choice.appendChild(btn);
+      const notButton = document.createElement("button");
+      notButton.type = "button";
+      notButton.className = "part-not";
+      notButton.textContent = "NOT";
+      notButton.setAttribute("aria-label", "Add NOT " + part.label + " to the script");
+      notButton.title = "Add as NOT";
+      notButton.addEventListener("click", () => addPartAsNot(part));
+      choice.appendChild(notButton);
+      partsEl.appendChild(choice);
     });
   }
-  function joinEl(op) {
-    const el = document.createElement("span");
-    if (!op) { el.className = "join need"; el.textContent = ""; el.title = "Drop AND or OR"; }
-    else { el.className = "join" + (op === "or" ? " or" : ""); el.textContent = op === "or" ? "OR" : "AND"; }
+  function joinEl(op, groupId) {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "join join-toggle" + (op === "or" ? " or" : "");
+    el.dataset.joinGroup = groupId;
+    el.textContent = op === "or" ? "OR" : "AND";
+    el.setAttribute("aria-label", "Change " + el.textContent + " to " + (op === "or" ? "AND" : "OR"));
+    el.title = "Click to switch to " + (op === "or" ? "AND" : "OR");
+    el.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const group = findNode(groupId);
+      if (!group) return;
+      group.op = group.op === "or" ? "and" : "or";
+      state.focusId = group.id;
+      updatePreview();
+    });
     return el;
   }
   function renderLeaf(node) {
@@ -1501,7 +1910,7 @@ function renderBuilder() {
       box.setAttribute("aria-label", (node.not ? "Not " : "") + "empty expression group");
     } else {
       node.children.forEach((ch, i) => {
-        if (i) box.appendChild(joinEl(node.op));
+        if (i) box.appendChild(joinEl(node.op || "or", node.id));
         box.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
       });
     }
@@ -1540,11 +1949,11 @@ function renderBuilder() {
   if (!state.tree.children.length) {
     const empty = document.createElement("div");
     empty.className = "expr-empty";
-    empty.textContent = "No blocks in your script yet. Click Add above to place one here.";
+    empty.textContent = "No blocks in your script yet. Add filters above, then drag one onto another to group them.";
     space.appendChild(empty);
   } else {
     state.tree.children.forEach((ch, i) => {
-      if (i) space.appendChild(joinEl(state.tree.op));
+      if (i) space.appendChild(joinEl(state.tree.op || "or", state.tree.id));
       space.appendChild(ch.kind === "leaf" ? renderLeaf(ch) : renderGroup(ch));
     });
   }
@@ -1554,7 +1963,7 @@ function renderBuilder() {
     if (!plain) {
       const s = document.createElement("span"); s.className = "mute";
       s.textContent = state.builderOpen
-        ? "Add filters to the script, then choose AND, OR, Group, or NOT."
+        ? "Add filters to the script, then tap a join to switch AND / OR."
         : "All / Any joins your picks. Open this to build a custom script.";
       read.appendChild(s);
     } else if (!expressionIsSetup()) {
@@ -1575,16 +1984,10 @@ function renderBuilder() {
       });
     }
   }
-  const box = focusedContainer();
-  const andBtn = $("addAndBtn"); const orBtn = $("addOrBtn"); const notBtn = $("addNotBtn");
-  if (andBtn) andBtn.classList.toggle("on", box.op === "and");
-  if (orBtn) orBtn.classList.toggle("on", box.op === "or");
-  const focus = findNode(state.focusId);
-  if (notBtn) notBtn.classList.toggle("on", !!(focus && focus.not));
   if (hint) {
     hint.textContent = builderDrag.carry
-      ? "Carrying " + (builderDrag.carry.label || "item") + " — tap the canvas or a group to place it."
-      : "Click Add to place blocks. Dragging is optional; on a phone, hold a block to move it.";
+      ? "Carrying " + (builderDrag.carry.label || "item") + " — drop it on the canvas, or hold over a block to group."
+      : "Drag a block onto another and hold; release when highlighted to group them.";
   }
 }
 
@@ -1775,7 +2178,7 @@ $("toTop").addEventListener("click", () => {
 window.addEventListener("scroll", paintToTop, { passive: true });
 paintToTop();
 function paintResultCols() {
-  const cols = String(state.resultCols || 2);
+  const cols = String(state.resultCols);
   if (resultsEl) resultsEl.dataset.cols = cols;
   document.querySelectorAll("#rowToggle [data-cols]").forEach((btn) => {
     const on = btn.dataset.cols === cols;
@@ -1794,25 +2197,8 @@ $("kwMode").addEventListener("click", (e) => {
   const bit = e.target.closest("[data-kw-mode]");
   if (!bit) return;
   state.kwMode = bit.dataset.kwMode;
-  state.tree.op = state.kwMode;
   paintKwMode();
   updatePreview();
-});
-$("addAndBtn").addEventListener("click", () => {
-  if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
-  setJoin("and");
-});
-$("addOrBtn").addEventListener("click", () => {
-  if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
-  setJoin("or");
-});
-$("addGroupBtn").addEventListener("click", () => {
-  if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
-  wrapParens();
-});
-$("addNotBtn").addEventListener("click", () => {
-  if (builderDrag.ignoreClick) { builderDrag.ignoreClick = false; return; }
-  toggleNegate();
 });
 $("builderTrash").addEventListener("click", () => {
   if (!builderDrag.carry) return;
@@ -1820,10 +2206,45 @@ $("builderTrash").addEventListener("click", () => {
   dragCleanup();
   dropPayload(payload, "trash", 0);
 });
-bindBuilderDrag($("addAndBtn"), { kind: "expr", expr: "and", label: "AND" });
-bindBuilderDrag($("addOrBtn"), { kind: "expr", expr: "or", label: "OR" });
-bindBuilderDrag($("addGroupBtn"), { kind: "expr", expr: "group", label: "Group" });
-bindBuilderDrag($("addNotBtn"), { kind: "expr", expr: "not", label: "NOT" });
+$("builderAddFilter").addEventListener("click", () => {
+  if (state.builderPickerOpen) {
+    setBuilderPickerOpen(false);
+    return;
+  }
+  setBuilderPickerOpen(true);
+  $("builderPickerSearch").focus();
+});
+$("builderPickerClose").addEventListener("click", () => {
+  setBuilderPickerOpen(false);
+  $("builderAddFilter").focus();
+});
+$("builderPickerSearch").addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setBuilderPickerOpen(false);
+    $("builderAddFilter").focus();
+  }
+});
+$("builderPickerSearch").addEventListener("input", (event) => {
+  builderPickerSearch = event.currentTarget.value;
+  renderBuilderPicker();
+  $("builderPickerSearch").focus();
+});
+document.querySelectorAll("[data-builder-tab]").forEach((button) => {
+  button.addEventListener("click", () => {
+    builderPickerTab = button.dataset.builderTab;
+    renderBuilderPicker();
+    $("builderPickerSearch").focus();
+  });
+  button.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const tabs = [...document.querySelectorAll("[data-builder-tab]")];
+    const index = tabs.indexOf(button);
+    const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    next.click();
+    next.focus();
+  });
+});
 
 ["sort", "unique", "setQuery", "yearFrom", "yearTo", "nameQuery", "powMin", "powMax", "touMin", "touMax", "usdMin", "usdMax"].forEach((id) => {
   const el = $(id);
@@ -1849,7 +2270,7 @@ $("kwSearch").addEventListener("keydown", (e) => {
     renderKeywords();
   }
 });
-["nameQuery", "oracleQuery", "powMin", "powMax", "touMin", "touMax", "usdMin", "usdMax"].forEach((id) => {
+["nameQuery", "powMin", "powMax", "touMin", "touMax", "usdMin", "usdMax"].forEach((id) => {
   const el = $(id);
   if (!el) return;
   el.addEventListener("keydown", (e) => {
@@ -1859,7 +2280,12 @@ $("kwSearch").addEventListener("keydown", (e) => {
     }
   });
 });
-$("oracleQuery").addEventListener("input", updatePreview);
+$("oracleBuilder").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("[data-oracle-term]")) {
+    event.preventDefault();
+    search(true);
+  }
+});
 $("subtypeQuery").addEventListener("input", updatePreview);
 $("subtypeQuery").addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -1980,7 +2406,12 @@ $("clearBtn").addEventListener("click", () => {
   $("touMax").value = "";
   $("usdMin").value = "";
   $("usdMax").value = "";
-  $("oracleQuery").value = "";
+  state.oracleTree = {
+    id: "oracle-root",
+    kind: "group",
+    op: "and",
+    children: [{ id: "oracle-initial", kind: "leaf", term: "", not: false }],
+  };
   $("subtypeQuery").value = "";
   $("setQuery").value = "";
   document.querySelectorAll("#rarityQuery [data-rarity]").forEach((button) => {
@@ -1991,8 +2422,11 @@ $("clearBtn").addEventListener("click", () => {
   $("yearTo").value = "";
   $("kwSearch").value = "";
   state.kwSearch = "";
-  state.tree = { id: "root", kind: "group", op: null, not: false, children: [] };
+  state.tree = { id: "root", kind: "group", op: "or", not: false, children: [] };
   state.parts = [];
+  state.builderPickerOpen = false;
+  builderPickerTab = "types";
+  builderPickerSearch = "";
   state.focusId = "root";
   state.lineageSlug = null;
   state.lineageOpen = {};
@@ -2009,6 +2443,7 @@ $("clearBtn").addEventListener("click", () => {
   moreBtn.hidden = true;
   statusEl.classList.remove("error");
   statusEl.textContent = "Set filters, then search.";
+  renderOracleBuilder();
   updatePreview();
 });
 
@@ -2300,6 +2735,7 @@ async function hydrateCatalogs() {
 
 renderKeywords();
 renderCmc();
+renderOracleBuilder();
 paintKwMode();
 paintIdMode();
 paintBuilderOpen();

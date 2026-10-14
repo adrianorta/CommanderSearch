@@ -53,12 +53,24 @@
           <button class="chip" data-t="planeswalker" aria-pressed="false">Planeswalker</button>
           <button class="chip" data-t="battle" aria-pressed="false">Battle</button>
           <button class="chip" data-t="land" aria-pressed="false">Land</button>
-          <button class="chip" data-t="legendary" aria-pressed="false">Legendary</button>
         </div>
-        <label class="field subtype-label" for="oracleQuery">Oracle Text</label>
-        <input id="oracleQuery" type="text" placeholder="&quot;draw a card&quot; &quot;counter target&quot; -discard" autocomplete="off" spellcheck="false" />
-        <label class="field subtype-label" for="subtypeQuery">Subtype</label>
-        <input id="subtypeQuery" type="text" placeholder="elf -human aura &quot;time lord&quot;" autocomplete="off" spellcheck="false" />
+        <div class="oracle-builder" id="oracleBuilder">
+          <div class="oracle-builder-heading">
+            <label class="field">Oracle Text</label>
+            <div class="oracle-logic" id="oracleLogic" role="group" aria-label="Match Oracle text">
+              <button type="button" data-oracle-op="and" aria-pressed="true">AND</button>
+              <button type="button" data-oracle-op="or" aria-pressed="false">OR</button>
+            </div>
+          </div>
+          <div class="oracle-group-children" id="oracleGroupRoot"></div>
+          <div class="oracle-add-actions">
+            <button type="button" class="oracle-add" data-oracle-action="add-term" data-oracle-parent="oracle-root">+ Phrase</button>
+            <button type="button" class="oracle-add" data-oracle-action="add-group" data-oracle-parent="oracle-root">+ Group</button>
+          </div>
+          <p class="oracle-hint">AND = every phrase · OR = at least one</p>
+        </div>
+        <label class="field subtype-label" for="subtypeQuery">Subtype / supertype</label>
+        <input id="subtypeQuery" type="text" placeholder="elf legendary -human aura &quot;time lord&quot;" autocomplete="off" spellcheck="false" />
         <details class="extra-box printing-box">
           <summary>Printing details</summary>
           <div class="printing-fields">
@@ -201,21 +213,29 @@
         <div class="builder-bar">
           <div>
             <div class="builder-title">Selected blocks</div>
-            <div class="builder-subtitle">Click Add to place a filter in your script.</div>
+            <div class="builder-subtitle">Add filters here without leaving your script.</div>
           </div>
+          <button type="button" class="builder-add-filter" id="builderAddFilter" aria-expanded="false" aria-controls="builderPicker">+ Add filter</button>
+        </div>
+        <div class="builder-picker" id="builderPicker" hidden>
+          <div class="builder-picker-head">
+            <strong>Add a filter</strong>
+            <button type="button" id="builderPickerClose" aria-label="Close filter picker">Close</button>
+          </div>
+          <div class="builder-picker-tabs" role="tablist" aria-label="Filter categories">
+            <button type="button" role="tab" data-builder-tab="types" aria-selected="true">Types</button>
+            <button type="button" role="tab" data-builder-tab="keywords" aria-selected="false">Keywords &amp; roles</button>
+          </div>
+          <label class="builder-picker-label" for="builderPickerSearch">Search types, keywords, and roles</label>
+          <input id="builderPickerSearch" type="search" placeholder="Search types, keywords, and roles" autocomplete="off" />
+          <div class="builder-picker-results" id="builderPickerResults" role="list"></div>
         </div>
         <div class="parts" id="parts"></div>
         <div class="tag-lineage-list" id="tagLineage" hidden></div>
         <div class="builder-bar">
           <div>
             <div class="builder-title">Script</div>
-            <div class="builder-subtitle">Choose how blocks should combine.</div>
-          </div>
-          <div class="builder-actions">
-            <button type="button" id="addAndBtn" title="Require all blocks in this group">AND</button>
-            <button type="button" id="addOrBtn" title="Match any block in this group">OR</button>
-            <button type="button" id="addGroupBtn" title="Put the selected block in a nested group">Group</button>
-            <button type="button" id="addNotBtn" title="Exclude the selected block or group">NOT</button>
+            <div class="builder-subtitle">Drag one block onto another and hold to group them. Release when highlighted.</div>
           </div>
         </div>
         <div class="workspace" id="workspace"></div>
@@ -223,7 +243,7 @@
           <span class="trash-icon" aria-hidden="true"></span>
         </div>
         </div>
-        <div class="builder-hint" id="builderHint"></div>
+        <div class="builder-hint" id="builderHint" role="status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -257,11 +277,13 @@
         <div class="status" id="status" role="status" aria-live="polite">Set filters, then search.</div>
         <div class="row-toggle" id="rowToggle" role="radiogroup" aria-label="Cards per row">
           <button type="button" data-cols="1" aria-label="One card per row">1</button>
-          <button type="button" data-cols="2" aria-label="Two cards per row" class="on">2</button>
+          <button type="button" data-cols="2" aria-label="Two cards per row">2</button>
           <button type="button" data-cols="3" aria-label="Three cards per row">3</button>
+          <button type="button" data-cols="4" aria-label="Four cards per row">4</button>
+          <button type="button" data-cols="5" aria-label="Five cards per row">5</button>
         </div>
       </div>
-      <div class="results" id="results" data-cols="2">
+      <div class="results" id="results" data-cols="5">
         <div class="empty empty-welcome">
           <div class="empty-mark" aria-hidden="true">✦</div>
           <div class="empty-title">Find your next Commander card</div>

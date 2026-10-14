@@ -35,6 +35,16 @@ export function layoutQuery(value) {
   return 'layout:' + String(value).toLowerCase();
 }
 
+export function oracleTermQuery(value) {
+  const name = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (!name) return '';
+  return name.includes(' ') || name.includes("'") || name.includes(',')
+    ? 'o:"' + name + '"'
+    : 'o:' + name;
+}
+
 function isSimpleTerm(query) {
   const value = String(query || '').trim();
   return /^[a-z]+:[^\s()]+$/i.test(value) || /^[a-z]+:"[^"]+"$/i.test(value);
@@ -131,6 +141,13 @@ function parseSubtypeQuery(raw) {
   return parts.join(' ');
 }
 
+function oracleQueryTree(node) {
+  if (node.kind === 'leaf') {
+    return { ...node, query: oracleTermQuery(node.term) };
+  }
+  return { ...node, children: (node.children || []).map(oracleQueryTree) };
+}
+
 export function cmcIsAny(min, max) {
   return min <= 0 && max >= CMC_MAX;
 }
@@ -142,7 +159,9 @@ export function cmcClause(min, max) {
 }
 
 function quoteName(value) {
-  const text = String(value || '').trim().replace(/"/g, '');
+  const text = String(value || '')
+    .trim()
+    .replace(/"/g, '');
   if (!text) return '';
   return /[\s:]/.test(text) ? 'name:"' + text + '"' : 'name:' + text;
 }
@@ -176,6 +195,7 @@ export function buildQuery({
   cmcMax,
   parts = [],
   tree,
+  oracleTree,
   kwMode,
   name = '',
   oracle = '',
@@ -196,7 +216,9 @@ export function buildQuery({
   if (identity) clauses.push(identity);
   const cardName = nameClause(name);
   if (cardName) clauses.push(cardName);
-  const oracleText = parseOracleQuery(oracle);
+  const oracleText = oracleTree?.children?.length
+    ? compileNode(oracleQueryTree(oracleTree), 'and')
+    : parseOracleQuery(oracle);
   if (oracleText) clauses.push(oracleText);
   const subtypes = parseSubtypeQuery(subtype);
   if (subtypes) clauses.push(subtypes);
