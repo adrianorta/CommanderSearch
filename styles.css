@@ -997,6 +997,12 @@ body.builder-dragging .join.need { visibility: hidden; }
 }
 .status { color: var(--muted); font-size: 0.88rem; }
 .status.error { color: var(--danger); }
+.results-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 12px;
+}
+.results-actions[hidden] { display: none; }
 .view-opts {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -405,6 +405,8 @@ let builderPickerSearch = "";
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
 const resultsEl = $("results");
+const resultsActions = $("resultsActions");
+const copyNamesBtn = $("copyNamesBtn");
 const moreBtn = $("moreBtn");
 const queryPreview = $("queryPreview");
 const scryfall = createScryfallClient();
@@ -431,21 +433,30 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !printingsModal.hasAttribute("hidden")) closePrintings();
 });
+
+async function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    if (!document.execCommand("copy")) throw new Error("Clipboard copy was rejected.");
+  } finally {
+    textarea.remove();
+  }
+}
+
 queryPreview.addEventListener("click", async () => {
   const q = buildQuery();
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(q);
-    else {
-      const ta = document.createElement("textarea");
-      ta.value = q;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      if (!document.execCommand("copy")) throw new Error("Clipboard copy was rejected.");
-      ta.remove();
-    }
+    await copyText(q);
     queryPreview.classList.add("copied");
     queryPreview.textContent = "Copied";
     setTimeout(() => {
@@ -458,6 +469,25 @@ queryPreview.addEventListener("click", async () => {
     queryPreview.textContent = "Copy failed";
     setTimeout(() => {
       queryPreview.textContent = buildQuery();
+    }, 1200);
+  }
+});
+copyNamesBtn.addEventListener("click", async () => {
+  const names = Array.from(resultsEl.querySelectorAll(".card"))
+    .map((card) => card.dataset.name)
+    .filter(Boolean);
+  if (!names.length) return;
+  try {
+    await copyText(names.join("\n"));
+    copyNamesBtn.textContent = "Copied!";
+    setTimeout(() => {
+      copyNamesBtn.textContent = "Copy card names";
+    }, 900);
+  } catch (error) {
+    console.warn("Unable to copy card names.", error);
+    copyNamesBtn.textContent = "Copy failed";
+    setTimeout(() => {
+      copyNamesBtn.textContent = "Copy card names";
     }, 1200);
   }
 });
@@ -2440,6 +2470,7 @@ $("clearBtn").addEventListener("click", () => {
   state.cmcMax = CMC_MAX;
   renderCmc();
   resultsEl.innerHTML = "";
+  resultsActions.hidden = true;
   moreBtn.hidden = true;
   statusEl.classList.remove("error");
   statusEl.textContent = "Set filters, then search.";
@@ -2520,6 +2551,7 @@ function renderCards(cards, append) {
   for (const card of cards) {
     const el = document.createElement("article");
     el.className = "card";
+    el.dataset.name = card.name || "";
     if (card.oracle_id) el.dataset.oracle = card.oracle_id;
     const faces = facesFor(card);
     const cardUrl = String(card.scryfall_uri || "");
@@ -2610,11 +2642,13 @@ function showEmptyResults(kind, detail) {
   }
   wrap.appendChild(title);
   wrap.appendChild(hint);
+  resultsActions.hidden = true;
   resultsEl.innerHTML = "";
   resultsEl.appendChild(wrap);
 }
 
 async function search(reset) {
+  if (reset) resultsActions.hidden = true;
   if (reset && state.searchController) state.searchController.abort();
   const controller = new AbortController();
   const requestId = ++state.searchRequest;
@@ -2659,6 +2693,7 @@ async function search(reset) {
     state.shown += cards.length;
     state.next = data.has_more ? data.next_page : null;
     renderCards(cards, !reset);
+    resultsActions.hidden = !resultsEl.querySelector(".card");
     hydrateCardPrices(cards, controller.signal).catch((error) => {
       if (error?.name === "AbortError" || requestId !== state.searchRequest) return;
       console.warn("Unable to hydrate card prices.", error);
