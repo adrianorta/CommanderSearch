@@ -60,14 +60,16 @@ export function negateTerm(query) {
   return '-' + value;
 }
 
-export function compileNode(node, kwMode) {
+export function compileNode(node, kwMode, parentOp = null) {
   if (!node) return '';
   if (node.kind === 'leaf') {
     const query = String(node.query || '').trim();
     if (!query) return '';
     return node.not ? negateTerm(query) : query;
   }
-  const parts = (node.children || []).map((child) => compileNode(child, kwMode)).filter(Boolean);
+  const parts = (node.children || [])
+    .map((child) => compileNode(child, kwMode, node.op))
+    .filter(Boolean);
   if (!parts.length) return '';
   if (parts.length === 1) {
     const inner = parts[0];
@@ -80,6 +82,7 @@ export function compileNode(node, kwMode) {
     inner = kwMode === 'or' ? '(' + parts.join(' or ') + ')' : parts.join(' ');
   else inner = '';
   if (!inner) return '';
+  if (parentOp === 'or' && node.op === 'and') inner = '(' + inner + ')';
   return node.not ? negateTerm(inner) : inner;
 }
 
@@ -128,10 +131,7 @@ function parseSubtypeQuery(raw) {
     const negated = token.startsWith('-') || token.startsWith('−');
     const name = (negated ? token.slice(1) : token).trim().toLowerCase();
     if (!name) return;
-    const term =
-      name.includes(' ') || name.includes("'") || name.includes(',')
-        ? 't:"' + name + '"'
-        : 't:' + name;
+    const term = subtypeTermQuery(name);
     (negated ? excluded : included).push(negated ? '-' + term : term);
   });
   const parts = [];
@@ -141,11 +141,28 @@ function parseSubtypeQuery(raw) {
   return parts.join(' ');
 }
 
+export function subtypeTermQuery(value) {
+  const name = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (!name) return '';
+  return name.includes(' ') || name.includes("'") || name.includes(',')
+    ? 't:"' + name + '"'
+    : 't:' + name;
+}
+
 function oracleQueryTree(node) {
   if (node.kind === 'leaf') {
     return { ...node, query: oracleTermQuery(node.term) };
   }
   return { ...node, children: (node.children || []).map(oracleQueryTree) };
+}
+
+function subtypeQueryTree(node) {
+  if (node.kind === 'leaf') {
+    return { ...node, query: subtypeTermQuery(node.term) };
+  }
+  return { ...node, children: (node.children || []).map(subtypeQueryTree) };
 }
 
 export function cmcIsAny(min, max) {
@@ -196,6 +213,7 @@ export function buildQuery({
   parts = [],
   tree,
   oracleTree,
+  subtypeTree,
   kwMode,
   name = '',
   oracle = '',
@@ -220,7 +238,9 @@ export function buildQuery({
     ? compileNode(oracleQueryTree(oracleTree), 'and')
     : parseOracleQuery(oracle);
   if (oracleText) clauses.push(oracleText);
-  const subtypes = parseSubtypeQuery(subtype);
+  const subtypes = subtypeTree?.children?.length
+    ? compileNode(subtypeQueryTree(subtypeTree), 'and')
+    : parseSubtypeQuery(subtype);
   if (subtypes) clauses.push(subtypes);
 
   const cmc = cmcClause(cmcMin, cmcMax);

@@ -69,8 +69,21 @@
           </div>
           <p class="oracle-hint">AND = every phrase · OR = at least one</p>
         </div>
-        <label class="field subtype-label" for="subtypeQuery">Subtype / supertype</label>
-        <input id="subtypeQuery" type="text" placeholder="elf legendary -human aura &quot;time lord&quot;" autocomplete="off" spellcheck="false" />
+        <div class="oracle-builder subtype-builder" id="subtypeBuilder">
+          <div class="oracle-builder-heading">
+            <label class="field">Subtype / supertype</label>
+            <div class="oracle-logic" id="subtypeLogic" role="group" aria-label="Match subtypes">
+              <button type="button" data-subtype-op="and" aria-pressed="true">AND</button>
+              <button type="button" data-subtype-op="or" aria-pressed="false">OR</button>
+            </div>
+          </div>
+          <div class="oracle-group-children" id="subtypeGroupRoot"></div>
+          <div class="oracle-add-actions">
+            <button type="button" class="oracle-add" data-subtype-action="add-term" data-subtype-parent="subtype-root">+ Type</button>
+            <button type="button" class="oracle-add" data-subtype-action="add-group" data-subtype-parent="subtype-root">+ Group</button>
+          </div>
+          <p class="oracle-hint">AND = every type · OR = at least one</p>
+        </div>
         <details class="extra-box printing-box">
           <summary>Printing details</summary>
           <div class="printing-fields">
@@ -300,6 +313,7 @@
     </main>
   </div>
 
+  <button type="button" class="primary mobile-search" id="mobileSearchBtn" aria-hidden="true" tabindex="-1">Search</button>
   <button type="button" class="to-top" id="toTop" hidden aria-label="Back to top">↑</button>
 
   <div class="kw-sheet" id="kwSheet" hidden>

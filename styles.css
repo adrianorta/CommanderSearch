@@ -408,8 +408,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .mana[data-c="C"].on { box-shadow: 0 0 0 2px var(--c); }
 
 .types, .keywords { display: flex; flex-wrap: wrap; gap: 8px; }
-.subtype-label { display:block; margin-top:10px; }
 .oracle-builder { margin-top: 12px; }
+.subtype-builder { margin-top: 16px; }
 .oracle-builder-heading {
   display: flex;
   justify-content: space-between;
@@ -1318,36 +1318,63 @@ body.builder-dragging .join.need { visibility: hidden; }
 }
 
 .to-top {
-  display: none;
+  display: grid;
+  place-items: center;
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1.1rem;
+  box-shadow: 0 8px 24px #0008;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.to-top[hidden] { display: none; }
+.to-top.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+#mobileSearchBtn {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 60;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(calc(100% + 16px));
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0s linear 0.22s;
+}
+#mobileSearchBtn.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition-delay: 0s;
 }
 @media (max-width: 900px) {
-  .to-top {
-    display: grid;
-    place-items: center;
-    position: fixed;
-    right: 16px;
-    bottom: 16px;
-    z-index: 40;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border-radius: 50%;
-    border: 1px solid var(--line);
-    background: var(--panel);
-    color: var(--text);
-    font-size: 1.1rem;
-    box-shadow: 0 8px 24px #0008;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .to-top.show {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-  }
-  body.sheet-open .to-top { opacity: 0; pointer-events: none; }
+  .to-top { display: none; }
+  #mobileSearchBtn { width: calc(100% - 32px); }
+}
+@media (min-width: 901px) {
+  #mobileSearchBtn { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #mobileSearchBtn { transition: none; }
 }
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }

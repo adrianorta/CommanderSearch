@@ -621,9 +621,9 @@ function buildQuery() {
     parts: state.parts,
     tree: state.tree,
     oracleTree: state.oracleTree,
+    subtypeTree: state.subtypeTree,
     kwMode: state.kwMode,
     name: $("nameQuery")?.value || "",
-    subtype: $("subtypeQuery")?.value || "",
     set: $("setQuery")?.value || "",
     rarity: rarities,
     yearFrom: $("yearFrom")?.value || "",
@@ -738,6 +738,15 @@ function findOracleNode(id, node = state.oracleTree) {
   if (node.id === id) return node;
   for (const child of node.children || []) {
     const found = findOracleNode(id, child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findSubtypeNode(id, node = state.subtypeTree) {
+  if (node.id === id) return node;
+  for (const child of node.children || []) {
+    const found = findSubtypeNode(id, child);
     if (found) return found;
   }
   return null;
@@ -922,6 +931,181 @@ function findOracleNodeParent(id, node = state.oracleTree) {
   }
   return null;
 }
+
+function findSubtypeNodeParent(id, node = state.subtypeTree) {
+  for (const child of node.children || []) {
+    if (child.id === id) return node;
+    const found = findSubtypeNodeParent(id, child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function subtypeOperatorButtons(group) {
+  const controls = document.createElement("div");
+  controls.className = "oracle-logic";
+  controls.setAttribute("role", "group");
+  controls.setAttribute("aria-label", "Match types in this group");
+  [["and", "AND"], ["or", "OR"]].forEach(([op, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.subtypeOp = op;
+    button.dataset.subtypeGroup = group.id;
+    button.setAttribute("aria-pressed", String(group.op === op));
+    button.textContent = label;
+    controls.appendChild(button);
+  });
+  return controls;
+}
+
+function subtypeAddButton(action, group, label) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "oracle-add";
+  button.dataset.subtypeAction = action;
+  button.dataset.subtypeParent = group.id;
+  button.textContent = "+ " + label;
+  return button;
+}
+
+function renderSubtypeGroup(group, isRoot = false) {
+  const container = document.createElement(isRoot ? "div" : "section");
+  container.className = isRoot ? "oracle-root-group" : "oracle-nested-group";
+  container.dataset.subtypeGroup = group.id;
+
+  if (!isRoot) {
+    const heading = document.createElement("div");
+    heading.className = "oracle-group-heading";
+    const label = document.createElement("span");
+    label.textContent = "Group";
+    heading.append(label, subtypeOperatorButtons(group));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "oracle-remove";
+    remove.dataset.subtypeAction = "remove";
+    remove.dataset.subtypeNode = group.id;
+    remove.setAttribute("aria-label", "Remove subtype group");
+    remove.textContent = "×";
+    heading.appendChild(remove);
+    container.appendChild(heading);
+  }
+
+  const children = document.createElement("div");
+  children.className = "oracle-group-children";
+  group.children.forEach((child) => {
+    if (child.kind === "group") {
+      children.appendChild(renderSubtypeGroup(child));
+      return;
+    }
+    const row = document.createElement("div");
+    row.className = "oracle-term-row";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.placeholder = 'e.g. elf, legendary, "time lord"';
+    input.setAttribute("aria-label", "Subtype or supertype");
+    input.dataset.subtypeTerm = child.id;
+    input.value = child.term;
+    row.appendChild(input);
+
+    const exclude = document.createElement("button");
+    exclude.type = "button";
+    exclude.className = "oracle-exclude";
+    exclude.dataset.subtypeAction = "toggle-not";
+    exclude.dataset.subtypeNode = child.id;
+    exclude.setAttribute("aria-pressed", String(Boolean(child.not)));
+    exclude.setAttribute("aria-label", child.not ? "Subtype is negated" : "Negate subtype");
+    exclude.textContent = "NOT";
+    row.appendChild(exclude);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "oracle-remove";
+    remove.dataset.subtypeAction = "remove";
+    remove.dataset.subtypeNode = child.id;
+    remove.setAttribute("aria-label", "Remove subtype");
+    remove.textContent = "×";
+    row.appendChild(remove);
+    children.appendChild(row);
+  });
+  container.appendChild(children);
+
+  if (!isRoot) {
+    const actions = document.createElement("div");
+    actions.className = "oracle-add-actions";
+    actions.append(
+      subtypeAddButton("add-term", group, "Type"),
+      subtypeAddButton("add-group", group, "Group")
+    );
+    container.appendChild(actions);
+  }
+  return container;
+}
+
+function renderSubtypeBuilder() {
+  const root = state.subtypeTree;
+  document.querySelectorAll("#subtypeLogic [data-subtype-op]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(root.op === button.dataset.subtypeOp));
+  });
+  $("subtypeGroupRoot").replaceChildren(renderSubtypeGroup(root, true));
+}
+
+$("subtypeBuilder").addEventListener("input", (event) => {
+  const input = event.target.closest("[data-subtype-term]");
+  if (!input) return;
+  const node = findSubtypeNode(input.dataset.subtypeTerm);
+  if (!node) return;
+  node.term = input.value;
+  updatePreview();
+});
+
+$("subtypeBuilder").addEventListener("click", (event) => {
+  const operator = event.target.closest("[data-subtype-op]");
+  if (operator) {
+    const group = findSubtypeNode(operator.dataset.subtypeGroup || "subtype-root");
+    if (!group) return;
+    group.op = operator.dataset.subtypeOp;
+    renderSubtypeBuilder();
+    updatePreview();
+    return;
+  }
+
+  const button = event.target.closest("[data-subtype-action]");
+  if (!button) return;
+  const action = button.dataset.subtypeAction;
+  if (action === "add-term" || action === "add-group") {
+    const parent = findSubtypeNode(button.dataset.subtypeParent);
+    if (!parent) return;
+    const nodeId = "subtype-" + nextTreeId();
+    parent.children.push(
+      action === "add-term"
+        ? { id: nodeId, kind: "leaf", term: "", not: false }
+        : { id: nodeId, kind: "group", op: "or", children: [] }
+    );
+    renderSubtypeBuilder();
+    updatePreview();
+    if (action === "add-term") {
+      [...$("subtypeBuilder").querySelectorAll("[data-subtype-term]")].find(
+        (input) => input.dataset.subtypeTerm === nodeId
+      )?.focus();
+    }
+    return;
+  }
+
+  const nodeId = button.dataset.subtypeNode;
+  const node = findSubtypeNode(nodeId);
+  if (!node) return;
+  if (action === "toggle-not") {
+    node.not = !node.not;
+  } else if (action === "remove") {
+    const parent = findSubtypeNodeParent(nodeId);
+    if (!parent) return;
+    parent.children = parent.children.filter((child) => child.id !== nodeId);
+  }
+  renderSubtypeBuilder();
+  updatePreview();
+});
 
 document.querySelectorAll("#colors .mana").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -2041,6 +2225,7 @@ function syncSheetLock() {
   const on = !!$("kwSheet")?.classList.contains("open");
   document.documentElement.classList.toggle("sheet-open", on);
   document.body.classList.toggle("sheet-open", on);
+  paintMobileSearch();
 }
 function closeKeywordSheet() {
   const sheet = $("kwSheet");
@@ -2202,11 +2387,28 @@ function paintToTop() {
   btn.classList.toggle("show", show);
   btn.hidden = !show;
 }
+function paintMobileSearch() {
+  const btn = $("mobileSearchBtn");
+  if (!btn) return;
+  const searchButtonBelowViewport = $("searchBtn").getBoundingClientRect().top >= window.innerHeight;
+  const show =
+    window.matchMedia("(max-width: 900px)").matches &&
+    searchButtonBelowViewport &&
+    !document.body.classList.contains("sheet-open");
+  btn.classList.toggle("is-visible", show);
+  btn.setAttribute("aria-hidden", show ? "false" : "true");
+  btn.tabIndex = show ? 0 : -1;
+}
 $("toTop").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
-window.addEventListener("scroll", paintToTop, { passive: true });
+window.addEventListener("scroll", () => {
+  paintToTop();
+  paintMobileSearch();
+}, { passive: true });
+window.addEventListener("resize", paintMobileSearch);
 paintToTop();
+paintMobileSearch();
 function paintResultCols() {
   const cols = String(state.resultCols);
   if (resultsEl) resultsEl.dataset.cols = cols;
@@ -2316,10 +2518,9 @@ $("oracleBuilder").addEventListener("keydown", (event) => {
     search(true);
   }
 });
-$("subtypeQuery").addEventListener("input", updatePreview);
-$("subtypeQuery").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
+$("subtypeBuilder").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("[data-subtype-term]")) {
+    event.preventDefault();
     search(true);
   }
 });
@@ -2407,13 +2608,16 @@ $("cmcPad").addEventListener("keydown", (e) => {
 $("cmcAny").addEventListener("click", () => applyCmcWindow(0, CMC_MAX));
 window.addEventListener("resize", renderCmc);
 
-$("searchBtn").addEventListener("click", () => {
+function startSearch() {
   if (state.kwOpen) {
     state.kwOpen = null;
     renderKeywords();
   }
   search(true);
-});
+  resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("searchBtn").addEventListener("click", startSearch);
+$("mobileSearchBtn").addEventListener("click", startSearch);
 $("moreBtn").addEventListener("click", () => search(false));
 $("clearBtn").addEventListener("click", () => {
   if (state.searchController) state.searchController.abort();
@@ -2442,7 +2646,12 @@ $("clearBtn").addEventListener("click", () => {
     op: "and",
     children: [{ id: "oracle-initial", kind: "leaf", term: "", not: false }],
   };
-  $("subtypeQuery").value = "";
+  state.subtypeTree = {
+    id: "subtype-root",
+    kind: "group",
+    op: "and",
+    children: [{ id: "subtype-initial", kind: "leaf", term: "", not: false }],
+  };
   $("setQuery").value = "";
   document.querySelectorAll("#rarityQuery [data-rarity]").forEach((button) => {
     button.classList.remove("on");
@@ -2475,6 +2684,7 @@ $("clearBtn").addEventListener("click", () => {
   statusEl.classList.remove("error");
   statusEl.textContent = "Set filters, then search.";
   renderOracleBuilder();
+  renderSubtypeBuilder();
   updatePreview();
 });
 
@@ -2771,6 +2981,7 @@ async function hydrateCatalogs() {
 renderKeywords();
 renderCmc();
 renderOracleBuilder();
+renderSubtypeBuilder();
 paintKwMode();
 paintIdMode();
 paintBuilderOpen();

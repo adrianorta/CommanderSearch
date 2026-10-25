@@ -24,6 +24,12 @@ export function createAppState() {
       op: 'and',
       children: [{ id: 'oracle-initial', kind: 'leaf', term: '', not: false }],
     },
+    subtypeTree: {
+      id: 'subtype-root',
+      kind: 'group',
+      op: 'and',
+      children: [{ id: 'subtype-initial', kind: 'leaf', term: '', not: false }],
+    },
     focusId: 'root',
     builderOpen: false,
     builderPickerOpen: false,
